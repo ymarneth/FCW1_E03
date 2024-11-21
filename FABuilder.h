@@ -86,7 +86,6 @@ public:
     MooreDFA *buildMooreDFA() const; // requires: mooreLambda is set
 
     // finally, a clear method that allows reuse or the builder:
-
     void clear();
 }; // FABuilder
 
