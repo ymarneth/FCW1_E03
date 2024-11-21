@@ -7,34 +7,26 @@
 #ifndef Grammar_h
 #define Grammar_h
 
-#include <initializer_list>
 #include <iosfwd>
-#include <map>
-#include <string>
-#include <vector>
-
 #include "ObjectCounter.h"
 #include "SymbolStuff.h"
 #include "Vocabulary.h"
-#include "SequenceStuff.h"
 #include "GrammarBasics.h"
 
 
 // === class Grammar ===================================================
 
-class Grammar // no public base class
-     /*OC+*/ : private ObjectCounter<Grammar> /*+OC*/ {
+class Grammar final: private ObjectCounter<Grammar> {
 
   friend class GrammarBuilder; // so its build method can call private constr.
 
   friend std::ostream &operator<<(std::ostream &os, const Grammar &g);
 
-  private:
 
-    mutable SymbolPool sp;
+  mutable SymbolPool sp;
 
     // constructor called by GrammarBuilder::buildGrammar only
-    Grammar(NTSymbol *const root, const RulesMap &rules,
+    Grammar(NTSymbol *root, const RulesMap &rules,
             const VNt &vnt, const VT &vT, const V &v);
 
   public:
@@ -50,7 +42,7 @@ class Grammar // no public base class
     Grammar(const Grammar &g) = default; // useless as grammars don't change
     Grammar &operator=(const Grammar &g) = delete; // impossible because of const data
 
-    virtual ~Grammar() = default;
+    ~Grammar() override = default;
 
     VNt deletableNTs() const;    // returns a subset of vNt
 
