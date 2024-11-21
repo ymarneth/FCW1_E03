@@ -55,7 +55,7 @@ public:
 
     ~FABuilder() override = default; // no virtual as class is final
 
-    // following methods for programmatical init. provide a fluent interface:
+    // following methods for programmatically init. provide a fluent interface:
 
     FABuilder &setStartState(const State &s);
 

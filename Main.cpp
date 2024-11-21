@@ -2,12 +2,15 @@
 // --------
 // Simple main program for
 // *     deterministic finite automata (DFA) and
-// * non-deterministic fintie automata (NFA).
+// * non-deterministic finite automata (NFA).
 //======================================================================
 
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 #include <memory>  // For smart pointers
+
+#include "GrammarBuilder.h"
 
 using namespace std;
 
@@ -59,10 +62,6 @@ void testDFA() {
     cout << "dfa->accepts(\"bzb\") = " << dfa->accepts("bzb") << endl;
     cout << "dfa->accepts(\"z\")   = " << dfa->accepts("z") << endl;
     cout << endl;
-
-    cout << "type CR to continue ... ";
-    getchar();
-    cout << endl;
 }
 
 void testNFA() {
@@ -105,6 +104,62 @@ void testNFA() {
     vizualizeFA("renMinDfaOfNfa", renMinDfaOfNfa.get());
 }
 
+bool canProduceTerminalString(const NTSymbol *nonTerminal, const SequenceSet &sequences) {
+    return true;
+}
+
+NFA *faOf(const Grammar *g) {
+    // Step 1: Prepare the FABuilder to construct the NFA
+    FABuilder builder;
+
+    // Step 2: Set up the start state of the NFA based on the root of the grammar
+    const auto startStateSymbol = dynamic_cast<NTSymbol *>(g->root);
+    builder.setStartState(startStateSymbol->name);
+
+    // Step 3: Add transitions based on the production rules of the grammar
+    for (const auto &rule: g->rules) {
+        auto const &nt = rule.first;
+        auto const &sequenceSet = rule.second;
+
+        for (const Sequence *seq: sequenceSet) {
+            const State srcState(nt->name);
+            const TapeSymbol tapeSymbol = seq->symbolAt(0)->name[0];
+
+            const auto targetSymbol = seq->back();
+
+            if (targetSymbol->isNT()) {
+                const State targetState(targetSymbol->name);
+                builder.addTransition(srcState, tapeSymbol, targetState);
+            } else {
+                builder.addFinalState(nt->name);
+            }
+        }
+    }
+
+    return builder.buildNFA();
+}
+
+void testNFAFromGrammar() {
+    cout << "3. NFA from Grammar" << endl;
+    cout << "--------------------" << endl;
+    cout << endl;
+
+    const GrammarBuilder gb4(
+        "G(1):                        \n\
+                 1 -> a 2 | b 1           \n\
+                 2 -> a 2 | b 1 | b 3 | a \n\
+                 3 -> a 2 | b 4           \n\
+                 4 -> a 4 | b 4 | b | a     ");
+
+    const auto *grammar = gb4.buildGrammar();
+
+    cout << "Creating NFA from Grammar..." << endl;
+    const unique_ptr<NFA> nfa(faOf(grammar));
+
+    cout << "nfaFromGrammar:" << endl << *nfa;
+    vizualizeFA("nfaFromGrammar", nfa.get());
+}
+
 int main(int argc, char *argv[]) {
     installSignalHandlers(); // to catch signals, especially SIGSEGV
 
@@ -114,12 +169,14 @@ int main(int argc, char *argv[]) {
     startTimer();
 
     try {
-        testDFA(); // Run DFA test
-        cout << "type CR to continue ... ";
-        getchar();
-        cout << endl;
+        /*testDFA(); // Run DFA test
+        cout << endl;*/
 
         testNFA(); // Run NFA test
+        cout << endl;
+
+        testNFAFromGrammar(); // Run NFA from Grammar test
+        cout << endl;
     } catch (const exception &e) {
         cerr << "EXCEPTION (" << typeid(e).name() << "): " << e.what() << endl;
     }
