@@ -1,0 +1,4 @@
+// simple deterministic automaton for identifiers:
+
+-> B -> b R 
+() R -> b R | z R 
