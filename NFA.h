@@ -11,14 +11,15 @@
 #include "TapeStuff.h"
 #include "StateStuff.h"
 #include "FA.h"
+#include "Grammar.h"
 
 class FABuilder; // forward for friend declaration only
 class DFA; // forward for transformation NFA -> DFA
 
-class NFA final : public FA, ObjectCounter<NFA> {
+class NFA final : public FA, private ObjectCounter<NFA> {
     friend class FABuilder; // so ::build.. methods can call prot. constr.
 
-    typedef FA Base;
+    using Base = FA;
 
     // constructor called by FABuilder::build... methods only
     NFA(const StateSet &S, const TapeSymbolSet &V,
@@ -45,16 +46,18 @@ public:
 
     bool accepts2(const Tape &tape) const; // uses backtracking
 
+    bool accepts3(const Tape &tape) const; // uses tracing of StateSets
+
+    NFA* faOf(const Grammar* g) const;
+
     StateSet epsClosureOf(const State &src) const;
 
     StateSet epsClosureOf(const StateSet &srcSet) const;
 
     StateSet allDestsFor(const StateSet &srcSet, TapeSymbol tSy) const;
 
-    bool accepts3(const Tape &tape) const; // uses tracing of StateSets
-
     DFA *dfaOf() const; // transformation: NFA => DFA
-}; // NFA
+};
 
 
 #endif
