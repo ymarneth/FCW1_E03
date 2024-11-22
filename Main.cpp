@@ -29,7 +29,7 @@ void testDFA() {
     cout << "------" << endl;
     cout << endl;
 
-    const int buildCase = 1;
+    constexpr int buildCase = 1;
     unique_ptr<FABuilder> fab;
 
     switch (buildCase) {
@@ -104,10 +104,6 @@ void testNFA() {
     vizualizeFA("renMinDfaOfNfa", renMinDfaOfNfa.get());
 }
 
-bool canProduceTerminalString(const NTSymbol *nonTerminal, const SequenceSet &sequences) {
-    return true;
-}
-
 NFA *faOf(const Grammar *g) {
     // Step 1: Prepare the FABuilder to construct the NFA
     FABuilder builder;
@@ -145,7 +141,7 @@ void testNFAFromGrammar() {
     cout << endl;
 
     const GrammarBuilder gb4(
-        "G(1):                        \n\
+        "G(1):                         \n\
                  1 -> a 2 | b 1           \n\
                  2 -> a 2 | b 1 | b 3 | a \n\
                  3 -> a 2 | b 4           \n\
@@ -160,6 +156,61 @@ void testNFAFromGrammar() {
     vizualizeFA("nfaFromGrammar", nfa.get());
 }
 
+Grammar *grammarOf(const NFA *nfa) {
+    SymbolPool sp;
+
+    auto *rootSymbol = sp.ntSymbol(nfa->s1);
+    const auto builder = std::make_unique<GrammarBuilder>(rootSymbol);
+
+    // Step 3: Add transitions based on the production rules of the grammar
+    for (const auto &transition: nfa->delta) {
+        const auto &srcState = transition.first;
+        const auto &transitions = transition.second;
+
+        for (const auto &pair: transitions) {
+            const auto &tapeSymbol = pair.first;
+            const auto &destStates = pair.second;
+
+            for (const auto &destState: destStates) {
+                const auto srcSymbol = sp.ntSymbol(srcState);
+                const auto destSymbol = sp.ntSymbol(destState);
+                const auto tapeSymbolSymbol = sp.tSymbol(&tapeSymbol);
+
+                const auto sequence = new Sequence();
+                sequence->append(tapeSymbolSymbol);
+                sequence->append(destSymbol);
+
+                builder->addRule(srcSymbol, sequence);
+
+                if (nfa->F.contains(srcState) && srcState.at(0) == destState.at(0)) {
+                    builder->addRule(srcSymbol, new Sequence(tapeSymbolSymbol));
+                }
+            }
+        }
+    }
+
+    return builder->buildGrammar();
+}
+
+void testGrammarOfNFA() {
+    cout << "4. Grammar from NFA" << endl;
+    cout << "--------------------" << endl;
+    cout << endl;
+
+    const auto fab = make_unique<FABuilder>(
+        "-> 1 -> a 2 | b 1         \n\
+         () 2 -> a 2 | b 1 | b 3  \n\
+            3 -> a 2 | b 4        \n\
+         () 4 -> a 4 | b 4");
+
+    const unique_ptr<NFA> nfa(fab->buildNFA());
+
+    cout << "Creating Grammar from NFA..." << endl;
+    const unique_ptr<Grammar> grammar(grammarOf(nfa.get()));
+
+    cout << "grammarOfNFA:" << endl << *grammar;
+}
+
 int main(int argc, char *argv[]) {
     installSignalHandlers(); // to catch signals, especially SIGSEGV
 
@@ -169,13 +220,16 @@ int main(int argc, char *argv[]) {
     startTimer();
 
     try {
-        /*testDFA(); // Run DFA test
-        cout << endl;*/
-
-        testNFA(); // Run NFA test
+        testDFA();
         cout << endl;
 
-        testNFAFromGrammar(); // Run NFA from Grammar test
+        testNFA();
+        cout << endl;
+
+        testNFAFromGrammar();
+        cout << endl;
+
+        testGrammarOfNFA();
         cout << endl;
     } catch (const exception &e) {
         cerr << "EXCEPTION (" << typeid(e).name() << "): " << e.what() << endl;

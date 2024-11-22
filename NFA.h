@@ -48,8 +48,6 @@ public:
 
     bool accepts3(const Tape &tape) const; // uses tracing of StateSets
 
-    NFA* faOf(const Grammar* g) const;
-
     StateSet epsClosureOf(const State &src) const;
 
     StateSet epsClosureOf(const StateSet &srcSet) const;
