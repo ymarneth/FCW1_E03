@@ -113,17 +113,15 @@ NFA *faOf(const Grammar *g) {
     builder.setStartState(startStateSymbol->name);
 
     // Step 3: Add transitions based on the production rules of the grammar
-    for (const auto &rule: g->rules) {
-        auto const &nt = rule.first;
-        auto const &sequenceSet = rule.second;
+    for (const auto &[key, value]: g->rules) {
+        auto const &nt = key;
+        auto const &sequenceSet = value;
 
         for (const Sequence *seq: sequenceSet) {
             const State srcState(nt->name);
             const TapeSymbol tapeSymbol = seq->symbolAt(0)->name[0];
 
-            const auto targetSymbol = seq->back();
-
-            if (targetSymbol->isNT()) {
+            if (const auto targetSymbol = seq->back(); targetSymbol->isNT()) {
                 const State targetState(targetSymbol->name);
                 builder.addTransition(srcState, tapeSymbol, targetState);
             } else {
@@ -156,41 +154,42 @@ void testNFAFromGrammar() {
     vizualizeFA("nfaFromGrammar", nfa.get());
 }
 
+void addProductionRules(GrammarBuilder *builder, SymbolPool &sp,
+                        const std::string &srcState, const std::string &tapeSymbol,
+                        const std::set<std::string> &destStates, const std::set<std::string> &finalStates) {
+    auto *srcSymbol = sp.ntSymbol(srcState);
+    auto *terminalSymbol = sp.tSymbol(tapeSymbol);
+
+    for (const auto &destState: destStates) {
+        auto *destSymbol = sp.ntSymbol(destState);
+
+        auto *sequence = new Sequence();
+        sequence->append(terminalSymbol);
+        sequence->append(destSymbol);
+
+        builder->addRule(srcSymbol, sequence);
+
+        if (finalStates.find(srcState) != finalStates.end() && srcState.at(0) == destState.at(0)) {
+            builder->addRule(srcSymbol, new Sequence(terminalSymbol));
+        }
+    }
+}
+
 Grammar *grammarOf(const NFA *nfa) {
     SymbolPool sp;
 
     auto *rootSymbol = sp.ntSymbol(nfa->s1);
     const auto builder = std::make_unique<GrammarBuilder>(rootSymbol);
 
-    // Step 3: Add transitions based on the production rules of the grammar
-    for (const auto &transition: nfa->delta) {
-        const auto &srcState = transition.first;
-        const auto &transitions = transition.second;
-
-        for (const auto &pair: transitions) {
-            const auto &tapeSymbol = pair.first;
-            const auto &destStates = pair.second;
-
-            for (const auto &destState: destStates) {
-                const auto srcSymbol = sp.ntSymbol(srcState);
-                const auto destSymbol = sp.ntSymbol(destState);
-                const auto tapeSymbolSymbol = sp.tSymbol(std::string(1, tapeSymbol));
-
-                const auto sequence = new Sequence();
-                sequence->append(tapeSymbolSymbol);
-                sequence->append(destSymbol);
-
-                builder->addRule(srcSymbol, sequence);
-
-                if (nfa->F.contains(srcState) && srcState.at(0) == destState.at(0)) {
-                    builder->addRule(srcSymbol, new Sequence(tapeSymbolSymbol));
-                }
-            }
+    for (const auto &[srcState, transitions]: nfa->delta) {
+        for (const auto &[tapeSymbol, destStates]: transitions) {
+            addProductionRules(builder.get(), sp, srcState, std::string(1, tapeSymbol), destStates, nfa->F);
         }
     }
 
     return builder->buildGrammar();
 }
+
 
 void testGrammarOfNFA() {
     cout << "4. Grammar from NFA" << endl;
