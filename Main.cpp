@@ -174,7 +174,7 @@ Grammar *grammarOf(const NFA *nfa) {
             for (const auto &destState: destStates) {
                 const auto srcSymbol = sp.ntSymbol(srcState);
                 const auto destSymbol = sp.ntSymbol(destState);
-                const auto tapeSymbolSymbol = sp.tSymbol(&tapeSymbol);
+                const auto tapeSymbolSymbol = sp.tSymbol(std::string(1, tapeSymbol));
 
                 const auto sequence = new Sequence();
                 sequence->append(tapeSymbolSymbol);
