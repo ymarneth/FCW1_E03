@@ -139,9 +139,8 @@ DFA *DFA::minimalOf() const {
               ne[si][sj] = // true  // si and sj ...
               ne[sj][si] = // true  // ... are not equivalent
               anyChange  = true;
-          } // for
-  } // while
-  // printNeTable(S, ne);     // for debugging only
+          }
+  }
 
   // 2. from ne table create the partition of S (= a set of subsets)
   SetOfStateSets partition;
@@ -152,8 +151,7 @@ DFA *DFA::minimalOf() const {
            (!ne[si]  [sj]) )  // si and sj are equiv.
         subset.insert(sj);
     partition.insert(subset);
-  } // for
-  // cout << "partition = " << partition << endl;
+  }
 
   FABuilder fab; // builder for the minimal DFA
 
@@ -167,16 +165,16 @@ DFA *DFA::minimalOf() const {
           fab.addTransition(srcStateSet.stateOf(), tSy,
                     /*dest*/subset.     stateOf());
           break;
-        } // if
-    } // for
-  } // for
+        }
+    }
+  }
 
   // 4. look for start state s1 and define new s1 for min. DFA
   for (const StateSet &subset: partition)
     if (subset.contains(s1)) {
       fab.setStartState(subset.stateOf());
       break; // as s1 is in one subset only
-    } // if
+    }
 
   // 5. look for final states f and define new F for min. DFA
   for (const StateSet &subset: partition)
@@ -185,8 +183,7 @@ DFA *DFA::minimalOf() const {
         fab.addFinalState(subset.stateOf());
 
   return fab.buildDFA();
-
-} // DFA::minimalOf
+}
 
 
 DFA *DFA::renamedOf() const {

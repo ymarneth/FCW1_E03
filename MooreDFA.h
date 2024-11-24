@@ -15,16 +15,13 @@
 #include "DFA.h"
 
 
-class FABuilder;           // forward for friend declaration only
+class FABuilder;
 
-class MooreDFA: public DFA
- /*OC+*/ , private ObjectCounter<MooreDFA> /*+OC*/ {
+class MooreDFA final : public DFA, private ObjectCounter<MooreDFA> {
 
-  friend class FABuilder;  // so ::build... methods can call prot. constr.
+  friend class FABuilder;
 
-  private:
-
-    typedef DFA Base;
+  typedef DFA Base;
 
   protected:
 
@@ -42,11 +39,7 @@ class MooreDFA: public DFA
 
     void onStateEntered(const State &s) const override;
 
-}; // MooreDFA
+};
 
 
 #endif
-
-// end of MooreDFA.h
-//======================================================================
-

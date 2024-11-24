@@ -24,7 +24,7 @@ class NFA final : public FA, private ObjectCounter<NFA> {
     // constructor called by FABuilder::build... methods only
     NFA(const StateSet &S, const TapeSymbolSet &V,
         const State &s1, const StateSet &F,
-        const NDelta &delta);
+        NDelta delta);
 
     StateSet deltaAt(const State &src, TapeSymbol tSy) const override;
 
