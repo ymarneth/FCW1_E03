@@ -3,15 +3,12 @@
 // Objects of class NFA represent non-deterministic finite automata.
 //======================================================================
 
-#include <cstring>
 #include <algorithm>
-#include <iostream>
 #include <fstream>
-#include <map>
 #include <mutex>
-#include <sstream>
 #include <stdexcept>
 #include <thread>
+#include <utility>
 #include <vector>
 
 using namespace std;
@@ -25,20 +22,15 @@ using namespace std;
 #include "NFA.h"
 #include "FABuilder.h"
 
-
-// --- implementation of class NFA ---
-
-
 NFA::NFA(const StateSet &S, const TapeSymbolSet &V,
          const State &s1, const StateSet &F,
-         const NDelta &delta)
-    : FA(S, V, s1, F), delta(delta) {
-} // NFA::NFA
-
+         NDelta delta)
+    : FA(S, V, s1, F), delta(std::move(delta)) {
+}
 
 StateSet NFA::deltaAt(const State &src, const TapeSymbol tSy) const {
     return delta[src][tSy];
-} // NFA::deltaAt
+}
 
 bool NFA::accepts(const Tape &tape) const {
     const bool ac1 = accepts1(tape);
@@ -47,12 +39,11 @@ bool NFA::accepts(const Tape &tape) const {
     if (ac1 == ac2 && ac2 == ac3)
         return ac1;
     throw runtime_error("results in NFA::accepts methods do not match");
-} // NFA::accepts
+}
 
 
 // NFA::accepts1: uses multithreading to simulate non-determinism
 //--------------
-
 static bool accepted;
 static mutex mtx; // used to synchronize access to variable accepted
 
@@ -74,19 +65,18 @@ static void accept1(const NDelta &delta, const StateSet &F,
                             tSyDest, tape, i + 1);
     for (auto &t: tv)
         t.join(); // join thread t with current thread
-} // accept1
+}
 
 bool NFA::accepts1(const Tape &tape) const {
     accepted = false;
     accept1(this->delta, this->F, this->s1, tape, 0); // normal call ...
     // ... within current thread
     return accepted;
-} // NFA::accepts1
+}
 
 
 // NFA::accepts2: uses backtracking to simulate non-determinism
 //--------------
-
 bool NFA::accepts2(const Tape &tape) const {
     // public
     return accepts2(s1, tape, 0); // see below
@@ -104,11 +94,10 @@ bool NFA::accepts2(const State &s, // private
         if (accepts2(tSyDest, tape, i + 1)) // recursive call
             return true;
     return false; // not accepted as no call succeeded
-} // NFA::accepts2
+}
 
 // NFA::accepts3: tracing of state sets to simulate non-determinism
 //--------------
-
 bool NFA::accepts3(const Tape &tape) const {
     int i = 0; // index of first symbol
     TapeSymbol tSy = tape[i]; // fetch first symbol
@@ -122,21 +111,19 @@ bool NFA::accepts3(const Tape &tape) const {
         ss = epsClosureOf(dest);
         i++;
         tSy = tape[i];
-    } // while
-    // ^ intersection operator:
+    }
     return !empty(ss ^ F); // accepted <==> (ss ^ F) != {}
-} // NFA::accepts3
+}
 
 // NFA::epsilonClosureOf (cf. Aho/Sethi/Ullman, p. 119):
 //----------------------
-
 StateSet NFA::epsClosureOf(const State &src) const {
     return epsClosureOf(StateSet(src)); // see below
-} // NFA::epsClosureOf
+}
 
 StateSet NFA::epsClosureOf(const StateSet &src) const {
     StateSet ec = src;
-    StateSet stc = src; // states to check
+    StateSet stc = src;
     while (!stc.empty()) {
         State s = stc.anyElement();
         stc.erase(s);
@@ -152,7 +139,6 @@ StateSet NFA::epsClosureOf(const StateSet &src) const {
 
 // NFA::allDestsFor (function move from Aho/Sethi/Ullman, p. 118):
 //-----------------
-
 StateSet NFA::allDestsFor(const StateSet &src, TapeSymbol tSy) const {
     StateSet ad; // start with empty set for all destinations
     for (const State &s: src)
@@ -161,58 +147,8 @@ StateSet NFA::allDestsFor(const StateSet &src, TapeSymbol tSy) const {
     return ad;
 } // NFA::allDestsFor
 
-/*NFA *NFA::faOf(const Grammar *grammar) const {
-    FABuilder fab;
-
-    std::unordered_map<const NTSymbol *, State> nonTerminalToState;
-
-    // Step 1: Set start state and add final states
-    fab.setStartState(s1);
-    fab.addFinalStates(F);
-
-    // Step 2: Populate the nonTerminalToState map for each non-terminal in the grammar
-    for (const auto &productionRule: grammar->rules) {
-        const auto lhsNonTerminal = productionRule.first;
-
-        if (nonTerminalToState.find(lhsNonTerminal) == nonTerminalToState.end()) {
-            const auto newState = State();
-            nonTerminalToState[lhsNonTerminal] = newState;
-        }
-    }
-
-    // Step 3: Process the grammar rules and create transitions for the NFA
-    for (const auto &productionRule: grammar->rules) {
-        const NTSymbol *lhsNonTerminal = productionRule.first;
-        State sourceState = nonTerminalToState[lhsNonTerminal];
-
-        for (const auto &rhsSymbols: productionRule.second) {
-            StateSet destinationStates;
-            TapeSymbol transitionSymbol = eps;
-
-            for (const Symbol *rhsSymbol: rhsSymbols) {
-                if (const auto *terminalSymbol = dynamic_cast<const TSymbol *>(rhsSymbol)) {
-                    if (!terminalSymbol->name.empty()) {
-                        transitionSymbol = terminalSymbol->name[0];
-                    }
-                } else if (const auto *nonTerminalSymbol = dynamic_cast<const NTSymbol *>(rhsSymbol)) {
-                    if (nonTerminalToState.find(nonTerminalSymbol) != nonTerminalToState.end()) {
-                        State nonTerminalState = nonTerminalToState[nonTerminalSymbol];
-                        destinationStates.insert(nonTerminalState);
-                    }
-                }
-            }
-
-            fab.addTransition(sourceState, transitionSymbol, destinationStates);
-        }
-    }
-
-    // Step 4: Build the NFA and return it
-    return fab.buildNFA();
-}*/
-
 // NFA::dfaOf (cf. Aho/Sethi/Ullman, p. 118):
 //-----------
-
 DFA *NFA::dfaOf() const {
     FABuilder fab;
 

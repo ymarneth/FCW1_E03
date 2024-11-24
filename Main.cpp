@@ -105,14 +105,12 @@ void testNFA() {
 }
 
 NFA *faOf(const Grammar *g) {
-    // Step 1: Prepare the FABuilder to construct the NFA
     FABuilder builder;
 
-    // Step 2: Set up the start state of the NFA based on the root of the grammar
-    const auto startStateSymbol = dynamic_cast<NTSymbol *>(g->root);
+    // Step 1: Set the start state of the NFA based on the root of the grammar
+    const auto startStateSymbol = g->root;
     builder.setStartState(startStateSymbol->name);
 
-    // Step 3: Add transitions based on the production rules of the grammar
     for (const auto &[key, value]: g->rules) {
         auto const &nt = key;
         auto const &sequenceSet = value;
@@ -122,9 +120,11 @@ NFA *faOf(const Grammar *g) {
             const TapeSymbol tapeSymbol = seq->symbolAt(0)->name[0];
 
             if (const auto targetSymbol = seq->back(); targetSymbol->isNT()) {
+                // Step 2: Add transitions (delta functions) based on the production rules of the grammar
                 const State targetState(targetSymbol->name);
                 builder.addTransition(srcState, tapeSymbol, targetState);
             } else {
+                // Step 3: Add final states for rules that produce terminal strings
                 builder.addFinalState(nt->name);
             }
         }
@@ -190,7 +190,6 @@ Grammar *grammarOf(const NFA *nfa) {
     return builder->buildGrammar();
 }
 
-
 void testGrammarOfNFA() {
     cout << "4. Grammar from NFA" << endl;
     cout << "--------------------" << endl;
@@ -210,16 +209,221 @@ void testGrammarOfNFA() {
     cout << "grammarOfNFA:" << endl << *grammar;
 }
 
+void testAcceptsWithDFA() {
+    cout << "5. Test DFA" << endl;
+    cout << "------------------------" << endl;
+    cout << endl;
+
+    FABuilder builder;
+    builder.setStartState("B")
+            .addFinalState("R")
+            .addTransition("B", 'b', "R")
+            .addTransition("R", 'b', "R")
+            .addTransition("R", 'z', "R");
+
+    // Here, we use the raw pointer returned by buildDFA() and wrap it in a unique_ptr.
+    const unique_ptr<DFA> dfa(builder.buildDFA());
+
+    cout << "dfa:" << endl << *dfa;
+    vizualizeFA("dfa", dfa.get());
+
+    auto testInput = [&](const string &input) {
+        cout << "dfa->accepts(\"" << input << "\") => ";
+        if (dfa->accepts(input)) {
+            cout << " (accepted)" << endl;
+        } else {
+            cout << " (rejected)" << endl;
+        }
+    };
+
+    testInput("b");
+    testInput("bzb");
+    testInput("bbb");
+    testInput("bbzbb");
+    testInput("bzzb");
+    testInput("z");
+    testInput("bbba");
+
+    cout << endl;
+}
+
+void testMoore() {
+    cout << "START: Moore" << endl;
+    cout << endl;
+
+    // DFA for transformation 0 -> F and 1 -> T in binary numbers
+    FABuilder builder;
+    builder.setStartState("S")
+            .addFinalState("Zero")
+            .addFinalState("One")
+            .addTransition("S", '0', "Zero")
+            .addTransition("S", '1', "One")
+            .addTransition("Zero", '0', "Zero")
+            .addTransition("Zero", '1', "One")
+            .addTransition("One", '0', "Zero")
+            .addTransition("One", '1', "One")
+            .setMooreLambda({
+                {"S", ' '},
+                {"Zero", 'F'},
+                {"One", 'T'}
+            });
+
+    const unique_ptr<DFA> mooreDfa(builder.buildMooreDFA());
+    cout << "mooreDfa->acceptsAsTemplateMethod(\"0101\") = " <<
+            mooreDfa->accepts("0101") << endl;
+    cout << endl;
+}
+
+void testMooreTranslation() {
+    cout << "6. Moore Translation" << endl;
+    cout << "------------------------" << endl;
+    cout << endl;
+
+    FABuilder builder;
+    builder.setStartState("B")
+            .addFinalState("R")
+            .addTransition("B", 'b', "R")
+            .addTransition("R", 'b', "R")
+            .addTransition("R", 'z', "R")
+            .setMooreLambda({
+                {"B", 'c'},
+                {"R", 'd'}
+            });
+
+    const unique_ptr<DFA> mooreDfa(builder.buildMooreDFA());
+
+    cout << "mooreDfa:" << endl << *mooreDfa;
+    vizualizeFA("mooreDfa", mooreDfa.get());
+
+    auto testInput = [&](const string &input) {
+        cout << "dfa->accepts(\"" << input << "\") => ";
+        if (mooreDfa->accepts(input)) {
+            cout << " (accepted)" << endl;
+        } else {
+            cout << " (rejected)" << endl;
+        }
+    };
+
+    testInput("bzzb");
+
+    cout << endl;
+}
+
+void testNFAAccepts() {
+    cout << "7. Test accepts methods" << endl;
+    cout << "------------------------" << endl;
+    cout << endl;
+
+    FABuilder builder;
+    builder.setStartState("S")
+            .addFinalState("R")
+            .addTransition("S", 'a', "S")
+            .addTransition("S", 'b', "S")
+            .addTransition("S", 'c', "S")
+            .addTransition("S", 'a', "A")
+            .addTransition("S", 'b', "B")
+            .addTransition("S", 'c', "C")
+            .addTransition("A", 'a', "A")
+            .addTransition("A", 'b', "A")
+            .addTransition("A", 'c', "A")
+            .addTransition("A", 'a', "R")
+            .addTransition("B", 'a', "B")
+            .addTransition("B", 'b', "B")
+            .addTransition("B", 'c', "B")
+            .addTransition("B", 'b', "R")
+            .addTransition("C", 'a', "C")
+            .addTransition("C", 'b', "C")
+            .addTransition("C", 'c', "C")
+            .addTransition("C", 'c', "R");
+
+    const unique_ptr<NFA> nfa(builder.buildNFA());
+
+    cout << "nfa:" << endl << *nfa;
+    vizualizeFA("nfa", nfa.get());
+
+    vector<string> testStrings = {
+        "a", "b", "c",
+        "aa", "ab", "ac",
+        "abc", "abca", "abcb", "abcc",
+        "aaaabbbbcccc", "abcabcabcabc", "aabbccbbcca",
+        "aaaaaaaa", "bbbbbbbb", "cccccccc",
+        "d", "xyz"
+    };
+
+    auto testMethod = [&](const string &methodName, auto acceptsMethod) {
+        cout << "Testing " << methodName << ":" << endl;
+        for (const auto &input: testStrings) {
+            cout << "nfa->" << methodName << "(\"" << input << "\") =>";
+
+            constexpr int numIterations = 1000;
+
+            startTimer();
+            for (int i = 0; i < numIterations; ++i) {
+                const auto result = acceptsMethod(input);
+            }
+            stopTimer();
+
+            cout << " - Time for 1000 iterations: " << elapsedTime() << "ms" << endl;
+        }
+        cout << endl;
+    };
+
+    testMethod("accepts1", [&](const string &input) { return nfa->accepts1(input); });
+    testMethod("accepts2", [&](const string &input) { return nfa->accepts2(input); });
+    testMethod("accepts3", [&](const string &input) { return nfa->accepts3(input); });
+}
+
+void testDfaOf() {
+    cout << "8. DFA of NFA" << endl;
+    cout << "------------------------" << endl;
+    cout << endl;
+
+    FABuilder builder;
+    builder.setStartState("S")
+            .addFinalState("R")
+            .addTransition("S", 'a', "S")
+            .addTransition("S", 'b', "S")
+            .addTransition("S", 'c', "S")
+            .addTransition("S", 'a', "A")
+            .addTransition("S", 'b', "B")
+            .addTransition("S", 'c', "C")
+            .addTransition("A", 'a', "A")
+            .addTransition("A", 'b', "A")
+            .addTransition("A", 'c', "A")
+            .addTransition("A", 'a', "R")
+            .addTransition("B", 'a', "B")
+            .addTransition("B", 'b', "B")
+            .addTransition("B", 'c', "B")
+            .addTransition("B", 'b', "R")
+            .addTransition("C", 'a', "C")
+            .addTransition("C", 'b', "C")
+            .addTransition("C", 'c', "C")
+            .addTransition("C", 'c', "R");
+
+    const unique_ptr<NFA> nfa(builder.buildNFA());
+
+    cout << "nfa:" << endl << *nfa;
+    vizualizeFA("nfa", nfa.get());
+
+    const unique_ptr<DFA> dfaOfNfa(nfa->dfaOf());
+
+    cout << "dfaOfNfa:" << endl << *dfaOfNfa;
+    vizualizeFA("dfaOfNfa", dfaOfNfa.get());
+
+    const unique_ptr<DFA> minDfaOfNfa(dfaOfNfa->minimalOf());
+
+    cout << "minDfaOfNfa:" << endl << *minDfaOfNfa;
+    vizualizeFA("minDfaOfNfa", minDfaOfNfa.get());
+}
+
 int main(int argc, char *argv[]) {
-    installSignalHandlers(); // to catch signals, especially SIGSEGV
+    installSignalHandlers();
 
     cout << "START: Main" << endl;
     cout << endl;
 
-    startTimer();
-
     try {
-        testDFA();
+        /*testDFA();
         cout << endl;
 
         testNFA();
@@ -229,13 +433,25 @@ int main(int argc, char *argv[]) {
         cout << endl;
 
         testGrammarOfNFA();
+        cout << endl;*/
+
+        /*testAcceptsWithDFA();
+        cout << endl;
+
+        testMooreTranslation();
+        cout << endl;*/
+
+        /*testNFAAccepts();
+        cout << endl;*/
+
+        /*testDfaOf();
+        cout << endl;*/
+
+        testAcceptsWithDFA();
         cout << endl;
     } catch (const exception &e) {
         cerr << "EXCEPTION (" << typeid(e).name() << "): " << e.what() << endl;
     }
-
-    stopTimer();
-    cout << "elapsed time: " << elapsedTime() << " [s]" << endl;
 
     cout << endl;
     cout << "END Main" << endl;
