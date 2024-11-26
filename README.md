@@ -4,13 +4,10 @@
 
 ## Umwandeln einer regulären Grammatik in einen NFA oder DFA
 
-Die Funktion `*faOf(const Grammar *g)` konvertiert eine reguläre Grammatik in einen nichtdeterministischen endlichen
-Automaten (NFA). Die Vorgehensweise lässt sich wie folgt zusammenfassen:
+Die Funktion `*faOf(const Grammar *g)` konvertiert eine reguläre Grammatik in einen nichtdeterministischen endlichen Automaten (NFA). Die Vorgehensweise lässt sich wie folgt zusammenfassen:
 
 1. Die Funktion setzt das Startsymbol der Grammatik als Startzustand des NFAs.
-2. Für jede Produktionsregel der Grammatik, die ein Nichtterminalsymbol enthält, wird für das Startsymbol und das erste
-   Symbol der Regel ein Übergang im NFA erstellt. Wenn das Ziel der Regel ein Nichtterminal ist, wird ein Übergang
-   zwischen den entsprechenden Zuständen hinzugefügt.
+2. Für jede Produktionsregel der Grammatik, die ein Nichtterminalsymbol enthält, wird für das Startsymbol und das erste Symbol der Regel ein Übergang im NFA erstellt. Wenn das Ziel der Regel ein Nichtterminal ist, wird ein Übergang zwischen den entsprechenden Zuständen hinzugefügt.
 3. Wenn eine Regel mit einem terminalen Symbol endet, wird der aktuelle Zustand als Endzustand im NFA hinzugefügt.
 
 Am Ende wird der NFA durch den FABuilder erstellt und zurückgegeben.
@@ -48,8 +45,7 @@ NFA *faOf(const Grammar *g) {
 
 <div style="page-break-before: always;"></div>
 
-Getestet wurde die Funktion mit der folgenden Grammatik, die auch in der bereits vorhandenen Testfunktion
-`testNFAFromGrammar` verwendet wird:
+Getestet wurde die Funktion mit der folgenden Grammatik, die auch in der bereits vorhandenen Testfunktion `testNFAFromGrammar` verwendet wird:
 
 ```c++
 void testNFAFromGrammar() {
@@ -96,17 +92,13 @@ und Darstellung
 
 ## Umgekehrte Transformation von NFA in eine reguläre Grammatik
 
-Die Funktion `Grammar *grammarOf(const NFA *nfa)` konvertiert einen nichtdeterministischen endlichen Automaten (NFA)
-zurück in eine Grammatik. Hier ist die Zusammenfassung der Schritte:
+Die Funktion `Grammar *grammarOf(const NFA *nfa)` konvertiert einen nichtdeterministischen endlichen Automaten (NFA) zurück in eine Grammatik. Hier ist die Zusammenfassung der Schritte:
 
 1. Der Startzustand des NFAs wird als Wurzelsymbol der Grammatik gesetzt und ein GrammarBuilder initialisiert.
 
-2. Für jeden Zustand im NFA und seine Übergänge werden addProductionRules Produktionsregeln für die Grammatik generiert.
-   Diese Regeln basieren auf den Übergängen im NFA.
+2. Für jeden Zustand im NFA und seine Übergänge werden addProductionRules Produktionsregeln für die Grammatik generiert. Diese Regeln basieren auf den Übergängen im NFA.
 
-3. Wenn ein Zustand sowohl ein Endzustand des NFAs ist als auch der Quellzustand eines Übergangs einem Zielzustand
-   entspricht, wird eine zusätzliche Produktionsregel hinzugefügt, die nur das Terminalsymbol enthält, um das Ende der
-   Produktion zu kennzeichnen.
+3. Wenn ein Zustand sowohl ein Endzustand des NFAs ist als auch der Quellzustand eines Übergangs einem Zielzustand entspricht, wird eine zusätzliche Produktionsregel hinzugefügt, die nur das Terminalsymbol enthält, um das Ende der Produktion zu kennzeichnen.
 
 4. Zum Schluss wird die Grammatik mit dem GrammarBuilder erzeugt und zurückgegeben.
 
@@ -151,12 +143,9 @@ Grammar *grammarOf(const NFA *nfa) {
 }
 ```
 
-Überprüfen lässt sich das Ergebnis, indem aus einer Grammatik G(S) ein NFA mit der Funktion `*faOf(const Grammar *g)` in
-einen NFA umgewandelt und anschließend mit `Grammar *grammarOf(const NFA *nfa)` wieder in eine Grammatik transformiert
-wird. Die resultierende Grammatik sollte der ursprünglichen Grammatik entsprechen.
+Überprüfen lässt sich das Ergebnis, indem aus einer Grammatik G(S) ein NFA mit der Funktion `*faOf(const Grammar *g)` in einen NFA umgewandelt und anschließend mit `Grammar *grammarOf(const NFA *nfa)` wieder in eine Grammatik transformiert wird. Die resultierende Grammatik sollte der ursprünglichen Grammatik entsprechen.
 
-Getestet wurde die Funktion daher mit der folgenden Grammatik, die auch in der bereits vorhandenen Testfunktion
-`testNFAFromGrammar` verwendet wird:
+Getestet wurde die Funktion daher mit der folgenden Grammatik, die auch in der bereits vorhandenen Testfunktion `testNFAFromGrammar` verwendet wird:
 
 ```c++
 void testGrammarOfNFA() {
@@ -249,20 +238,13 @@ dfa->accepts("bbba") =>  (rejected)
 
 ## b)
 
-Ein Mealy-Automat ist für diese Aufgabe wahrscheinlich besser geeignet als ein Moore-Automat, da er die Ausgaben
-basierend auf der aktuellen Kombination aus Zustand und Eingabesymbol generiert. Auf diese Weise kann auch das
-Bandsymbol in die Übersetzung mit einbezogen werden. Ein Moore-Automat müsste für jede Ausgabe einen eigenen Zustand
-definieren, was zu einem größeren Automaten mit höherer Komplexität führen würde.
+Ein Mealy-Automat ist für diese Aufgabe wahrscheinlich besser geeignet als ein Moore-Automat, da er die Ausgaben basierend auf der aktuellen Kombination aus Zustand und Eingabesymbol generiert. Auf diese Weise kann auch das Bandsymbol in die Übersetzung mit einbezogen werden. Ein Moore-Automat müsste für jede Ausgabe einen eigenen Zustand definieren, was zu einem größeren Automaten mit höherer Komplexität führen würde.
 
 ### Implementierung eines Mealy-Automaten
 
-Der Konstruktor eines Mealy-Automaten initialisiert den Automaten mit einer Lambda-Funktion, die die Ausgaben direkt
-abhängig von der Kombination aus aktuellem Zustand und Eingabesymbol definiert.
+Der Konstruktor eines Mealy-Automaten initialisiert den Automaten mit einer Lambda-Funktion, die die Ausgaben direkt abhängig von der Kombination aus aktuellem Zustand und Eingabesymbol definiert.
 
-Die `accepts`-Methode überprüft, ob eine Eingabe akzeptiert wird, indem sie Ausgaben nicht nur vom Zustand,
-sondern auch vom gerade gelesenen `TapeSymbol` ableiten können. Die Methode liest das aktuelle `TapeSymbol` und bestimmt
-die entsprechende Ausgabe anhand der Lambda-Funktion. Dann geht sie zum nächsten Zustand über, der durch die
-Übergangsfunktion definiert ist.
+Die `accepts`-Methode überprüft, ob eine Eingabe akzeptiert wird, indem sie Ausgaben nicht nur vom Zustand, sondern auch vom gerade gelesenen `TapeSymbol` ableiten können. Die Methode liest das aktuelle `TapeSymbol` und bestimmt die entsprechende Ausgabe anhand der Lambda-Funktion. Dann geht sie zum nächsten Zustand über, der durch die Übergangsfunktion definiert ist.
 
 ```c++
 MealyDFA::MealyDFA(const StateSet &S, const TapeSymbolSet &V,
@@ -300,11 +282,7 @@ bool MealyDFA::accepts(const Tape &tape) const {
 
 ### Erweiterung des FABuilders
 
-Die Methode `setMealyLambda` erlaubt das Festlegen von Paaren aus Zuständen und Symbolen und den dazugehörigen
-Ausgabesymbolen. Sie stellt außerdem sicher, dass die Zustände und Symbole im Automaten gültig sind. Die Methode
-`buildMealyDFA` erzeugt eine Instanz eines `MealyDFA` und prüft dabei, ob die Lambda-Funktion definiert ist und der
-Automat
-deterministisch ist.
+Die Methode `setMealyLambda` erlaubt das Festlegen von Paaren aus Zuständen und Symbolen und den dazugehörigen Ausgabesymbolen. Sie stellt außerdem sicher, dass die Zustände und Symbole im Automaten gültig sind. Die Methode `buildMealyDFA` erzeugt eine Instanz eines `MealyDFA` und prüft dabei, ob die Lambda-Funktion definiert ist und der Automat deterministisch ist.
 
 ```c++
 FABuilder &FABuilder::setMealyLambda(const std::initializer_list<std::pair<std::pair<State, TapeSymbol>, char> > il) {
@@ -387,114 +365,19 @@ Eingabe akzeptiert!
 
 ### `accepts1`
 
-This method uses multithreading to simulate non-determinism. It spawns a new thread for each possible transition (
-epsilon transitions or symbol transitions). If any thread reaches a final state at the end of the tape, a shared
-accepted variable is set to true, protected by a mutex to ensure thread safety. All threads are joined before the
-function completes. This method is computationally intensive but showcases parallel exploration of possible paths.
-
-```c++
-// NFA::accepts1: uses multithreading to simulate non-determinism
-//--------------
-static bool accepted;
-static mutex mtx; // used to synchronize access to variable accepted
-
-static void accept1(const NDelta &delta, const StateSet &F,
-                    const State &s, const Tape &tape, int i) {
-    vector<thread> tv; // thread vector
-    for (const State &epsDest: delta[s][eps]) // eps. transitions
-        tv.emplace_back(accept1, cref(delta), cref(F),
-                        epsDest, tape, i);
-    const TapeSymbol tSy = tape[i];
-    if (tSy == eot && F.contains(s)) {
-        // end of tape and s is final
-        mtx.lock();
-        accepted = true;
-        mtx.unlock();
-    } else
-        for (const State &tSyDest: delta[s][tSy]) // symbol transitions
-            tv.emplace_back(accept1, cref(delta), cref(F),
-                            tSyDest, tape, i + 1);
-    for (auto &t: tv)
-        t.join(); // join thread t with current thread
-}
-
-bool NFA::accepts1(const Tape &tape) const {
-    accepted = false;
-    accept1(this->delta, this->F, this->s1, tape, 0); // normal call ...
-    // ... within current thread
-    return accepted;
-}
-```
-
-<div style="page-break-before: always;"></div>
+Diese Methode verwendet Multithreading, um Nichtdeterminismus zu simulieren. Sie erstellt für jede mögliche Transition einen neuen Thread. Wenn ein Thread am Ende des Bands einen Endzustand erreicht, wird eine gemeinsame Variable `accepted` auf `true` gesetzt. Diese Variable wird geschützt, um Threadsicherheit zu gewährleisten. Bevor die Funktion beendet wird, werden alle Threads zusammengeführt (joined).
 
 ### `accepts2`
 
-This method uses recursive backtracking to simulate non-determinism. Starting from the initial state, it recursively
-explores all possible transitions (epsilon and symbol) along the tape. If any path reaches a final state at the end of
-the tape, the function returns true. Otherwise, it backtracks and continues exploring other paths. This approach is
-simpler and more memory-efficient than multithreading but can encounter stack overflow for deep recursion.
-
-```c++
-// NFA::accepts2: uses backtracking to simulate non-determinism
-//--------------
-bool NFA::accepts2(const Tape &tape) const {
-    return accepts2(s1, tape, 0); // see below
-}
-
-bool NFA::accepts2(const State &s,
-                   const Tape &tape, int i) const {
-    for (const State &epsDest: delta[s][eps]) // eps transitions
-        if (accepts2(epsDest, tape, i)) // recursive call
-            return true;
-    TapeSymbol tSy = tape[i];
-    if (tSy == eot)
-        return F.contains(s); // accepted <==> s is final
-    for (const State &tSyDest: delta[s][tSy]) // symbol transitions
-        if (accepts2(tSyDest, tape, i + 1)) // recursive call
-            return true;
-    return false; // not accepted as no call succeeded
-}
-```
+Diese Methode verwendet rekursives Backtracking, um Nichtdeterminismus zu simulieren. Ausgehend vom Anfangszustand werden alle möglichen Transitionen entlang des Bandes rekursiv erkundet. Wenn ein Pfad am Ende des Bandes einen Endzustand erreicht, gibt die Funktion true zurück. Andernfalls wird zurückgegangen und andere Pfade werden untersucht. Dieser Ansatz ist einfacher und speichereffizienter als Multithreading, könnte aber bei sehr tiefer Rekursion zu einem Stackoverflow führen.
 
 ### `accepts3`
 
-This method simulates non-determinism by tracing sets of states instead of exploring each path individually. Starting
-from the epsilon closure of the initial state, it iteratively computes the set of all possible destination states for
-each tape symbol. The process continues until the end of the tape. If the final set of states intersects with the set of
-final states, the input is accepted.
-
-```c++
-// NFA::accepts3: tracing of state sets to simulate non-determinism
-//--------------
-bool NFA::accepts3(const Tape &tape) const {
-    int i = 0; // index of first symbol
-    TapeSymbol tSy = tape[i]; // fetch first symbol
-    StateSet ss = epsClosureOf(StateSet(s1));
-
-    while (tSy != eot) {
-        // eot = end of tape
-        StateSet dest = allDestsFor(ss, tSy);
-        if (!defined(dest))
-            return false; // undefined, so no acceptance
-        ss = epsClosureOf(dest);
-        i++;
-        tSy = tape[i];
-    }
-    return !empty(ss ^ F); // accepted <==> (ss ^ F) != {}
-}
-```
+Diese Methode simuliert Nichtdeterminismus, indem sie Mengen von Zuständen verfolgt, anstatt jeden Pfad einzeln zu erkunden. Ausgehend vom Anfangszustand wird iterativ die Menge aller möglichen Zielzustände für jedes Bandsymbol berechnet. Der Prozess wird bis zum Ende des Bands fortgesetzt. Wenn die endgültige Zustandsmenge eine Schnittmenge mit der Menge der Endzustände bildet, wird die Eingabe akzeptiert.
 
 ### NFA Automaton
 
-Aus dem gegebenen Automaten
-
-<div style="text-align: center;">
-<img src="./data/3_a_Screenshot.png" alt="Image description" width="400">
-<figcaption><i>Figure</i></figcaption>
-</div>
-
-lässt sich die folgende Implementierung ableiten:
+Aus dem gegebenen Automaten lässt sich die folgende Implementierung ableiten:
 
 ```c++
     FABuilder builder;
@@ -535,25 +418,22 @@ nfa:
 
 <div style="text-align: center;">
 <img src="./data/3_a.svg" alt="Image description" width="400">
-<figcaption><i>Figure TODO: Visualized Automaton</i></figcaption>
+<figcaption><i>Figure 2: Visualized Automaton</i></figcaption>
 </div>
 
 ### Tests
 
-Um mehrere Testwerte effizient und konsistent zu testen, können wir eine Liste von Teststrings und eine
-wiederverwendbare Lambda-Funktion `testMethod` definieren, um jede der akzeptierten Methoden auszuwerten.
+Um mehrere Testwerte effizient und konsistent zu testen, können wir eine Liste von Teststrings und eine wiederverwendbare Lambda-Funktion `testMethod` definieren, um jede der akzeptierten Methoden auszuwerten.
 
-Die Teststrings werden iteriert und die angegebene Methode wird auf jeden String angewendet, wobei auf der Konsole
-ausgegeben wird, ob der NFA ihn akzeptiert oder ablehnt.
+Die Teststrings werden iteriert und die angegebene Methode wird auf jeden String angewendet, wobei auf der Konsole ausgegeben wird, ob der NFA ihn akzeptiert oder ablehnt.
 
 ```c++
     vector<string> testStrings = {
         "a", "b", "c",
-        "aa", "ab", "ac",
-        "abc", "abca", "abcb", "abcc",
+        "ab", "abc", "abca", "abcb", "abcc",
         "aaaabbbbcccc", "abcabcabcabc", "aabbccbbcca",
         "aaaaaaaa", "bbbbbbbb", "cccccccc",
-        "d","xyz"
+        "xyz"
     };
 
     auto testMethod = [&](const string &methodName, auto acceptsMethod) {
@@ -627,13 +507,11 @@ nfa->accepts3("cccccccc") => (accepted)
 nfa->accepts3("xyz") => (rejected)
 ```
 
-Wichtig ist, dass jede `accept`-Implementierung das gleiche Ergebnis für gleiche Teststrings liefert und die Ergebnisse
-zwischen den getesteten Funktionen so konsistent untereinander ist.
+Wichtig ist, dass jede `accept`-Implementierung das gleiche Ergebnis für gleiche Teststrings liefert und die Ergebnisse zwischen den getesteten Funktionen so konsistent untereinander ist.
 
 ## b)
 
-Um die Performance der `accept`-Implementierungen zu vergleichen, habe ich meine `testFunction` so modifiziert, sodass
-sie die Zeit jeder Auswertung erfasst:
+Um die Performance der `accept`-Implementierungen zu vergleichen, habe ich meine `testFunction` so modifiziert, sodass sie die Zeit jeder Auswertung erfasst:
 
 ```c++
     auto testMethod = [&](const string &methodName, auto acceptsMethod) {
@@ -662,16 +540,7 @@ Testing accepts1:
 nfa->accepts1("a") => (rejected) - 0ms
 nfa->accepts1("ab") => (rejected) - 0ms
 nfa->accepts1("abc") => (rejected) - 0ms
-nfa->accepts1("abca") => (accepted) - 0.001ms
-nfa->accepts1("abcb") => (accepted) - 0ms
-nfa->accepts1("abcc") => (accepted) - 0ms
-nfa->accepts1("aaaabbbbcccc") => (accepted) - 0.006ms
-nfa->accepts1("abcabcabcabc") => (accepted) - 0.005ms
-nfa->accepts1("aabbccbbcca") => (accepted) - 0.004ms
-nfa->accepts1("aaaaaaaa") => (accepted) - 0.003ms
-nfa->accepts1("bbbbbbbb") => (accepted) - 0.003ms
-nfa->accepts1("cccccccc") => (accepted) - 0.004ms
-nfa->accepts1("xyz") => (rejected) - 0ms
+...
 ```
 
 ```c++
@@ -679,16 +548,7 @@ Testing accepts2:
 nfa->accepts2("a") => (rejected) - 0ms
 nfa->accepts2("ab") => (rejected) - 0ms
 nfa->accepts2("abc") => (rejected) - 0ms
-nfa->accepts2("abca") => (accepted) - 0ms
-nfa->accepts2("abcb") => (accepted) - 0ms
-nfa->accepts2("abcc") => (accepted) - 0ms
-nfa->accepts2("aaaabbbbcccc") => (accepted) - 0ms
-nfa->accepts2("abcabcabcabc") => (accepted) - 0ms
-nfa->accepts2("aabbccbbcca") => (accepted) - 0ms
-nfa->accepts2("aaaaaaaa") => (accepted) - 0ms
-nfa->accepts2("bbbbbbbb") => (accepted) - 0ms
-nfa->accepts2("cccccccc") => (accepted) - 0ms
-nfa->accepts2("xyz") => (rejected) - 0ms
+...
 ```
 
 ```c++
@@ -696,24 +556,14 @@ Testing accepts3:
 nfa->accepts3("a") => (rejected) - 0ms
 nfa->accepts3("ab") => (rejected) - 0ms
 nfa->accepts3("abc") => (rejected) - 0ms
-nfa->accepts3("abca") => (accepted) - 0ms
-nfa->accepts3("abcb") => (accepted) - 0ms
-nfa->accepts3("abcc") => (accepted) - 0ms
-nfa->accepts3("aaaabbbbcccc") => (accepted) - 0ms
-nfa->accepts3("abcabcabcabc") => (accepted) - 0ms
-nfa->accepts3("aabbccbbcca") => (accepted) - 0ms
-nfa->accepts3("aaaaaaaa") => (accepted) - 0ms
-nfa->accepts3("bbbbbbbb") => (accepted) - 0ms
-nfa->accepts3("cccccccc") => (accepted) - 0ms
-nfa->accepts3("xyz") => (rejected) - 0ms
+...
 ```
 
-Die Ausgabe schien auf Millisekunden-Niveau zu ungenau zu sein, um die Implementierungen miteinander vergleichen zu
-können. Um dieses Problem zu lösen, habe ich zwei Varianten ausprobiert:
+Die Ausgabe schien auf Millisekunden-Niveau zu ungenau zu sein, um die Implementierungen miteinander vergleichen zu können. Um dieses Problem zu lösen, habe ich zwei Varianten ausprobiert:
 
-### Variante 1: Messgenauigkeit erhöhen auf Nanosekunden
+### Messgenauigkeit erhöhen auf Nanosekunden
 
-Um die Messgenauikeit zu erhöhen, habe ich die Berechnung der vergangenen Zeit angepasst:
+Um die Messgenauigkeit zu erhöhen, habe ich die Berechnung der vergangenen Zeit angepasst:
 
 ```c++
 double elapsedTime() {
@@ -726,9 +576,6 @@ Das neue Ergebnis:
 ```c++
 Testing accepts1:
 nfa->accepts1("a") => (rejected) - 0.2695ms
-nfa->accepts1("b") => (rejected) - 0.1893ms
-nfa->accepts1("c") => (rejected) - 0.5607ms
-nfa->accepts1("aa") => (accepted) - 0.4595ms
 nfa->accepts1("ab") => (rejected) - 0.3732ms
 nfa->accepts1("ac") => (rejected) - 0.3339ms
 nfa->accepts1("abc") => (rejected) - 0.5803ms
@@ -741,18 +588,13 @@ nfa->accepts1("aabbccbbcca") => (accepted) - 5.2142ms
 nfa->accepts1("aaaaaaaa") => (accepted) - 3.5449ms
 nfa->accepts1("bbbbbbbb") => (accepted) - 3.7402ms
 nfa->accepts1("cccccccc") => (accepted) - 3.8015ms
-nfa->accepts1("d") => (rejected) - 0.0033ms
 nfa->accepts1("xyz") => (rejected) - 0.0069ms
 ```
 
 ```c++
 Testing accepts2:
 nfa->accepts2("a") => (rejected) - 0.0109ms
-nfa->accepts2("b") => (rejected) - 0.0086ms
-nfa->accepts2("c") => (rejected) - 0.0097ms
-nfa->accepts2("aa") => (accepted) - 0.0192ms
 nfa->accepts2("ab") => (rejected) - 0.0173ms
-nfa->accepts2("ac") => (rejected) - 0.0185ms
 nfa->accepts2("abc") => (rejected) - 0.0136ms
 nfa->accepts2("abca") => (accepted) - 0.0041ms
 nfa->accepts2("abcb") => (accepted) - 0.0057ms
@@ -763,18 +605,13 @@ nfa->accepts2("aabbccbbcca") => (accepted) - 0.0064ms
 nfa->accepts2("aaaaaaaa") => (accepted) - 0.011ms
 nfa->accepts2("bbbbbbbb") => (accepted) - 0.0056ms
 nfa->accepts2("cccccccc") => (accepted) - 0.0109ms
-nfa->accepts2("d") => (rejected) - 0.0023ms
 nfa->accepts2("xyz") => (rejected) - 0.0127ms
 ```
 
 ```c++
 Testing accepts3:
 nfa->accepts3("a") => (rejected) - 0.0546ms
-nfa->accepts3("b") => (rejected) - 0.0516ms
-nfa->accepts3("c") => (rejected) - 0.0383ms
-nfa->accepts3("aa") => (accepted) - 0.023ms
 nfa->accepts3("ab") => (rejected) - 0.0397ms
-nfa->accepts3("ac") => (rejected) - 0.0465ms
 nfa->accepts3("abc") => (rejected) - 0.0472ms
 nfa->accepts3("abca") => (accepted) - 0.0443ms
 nfa->accepts3("abcb") => (accepted) - 0.0476ms
@@ -785,113 +622,30 @@ nfa->accepts3("aabbccbbcca") => (accepted) - 0.131ms
 nfa->accepts3("aaaaaaaa") => (accepted) - 0.0634ms
 nfa->accepts3("bbbbbbbb") => (accepted) - 0.0476ms
 nfa->accepts3("cccccccc") => (accepted) - 0.0464ms
-nfa->accepts3("d") => (rejected) - 0.0388ms
 nfa->accepts3("xyz") => (rejected) - 0.0248ms
 ```
 
 Auf diese Weise sind die Werte vergleichbarer.
 
-### Variante 2: Mehr iterationen pro Testwert
-
-Dazu führe ich `accept` für jeden Testfall mehrfach aus, die Performance über viele Aufrufe hinweg zu vergleichen:
-
-```c++
-Testing accepts1:
-nfa->accepts1("a") => - Time for 1000 iterations: 0.154ms
-nfa->accepts1("b") => - Time for 1000 iterations: 0.136ms
-nfa->accepts1("c") => - Time for 1000 iterations: 0.13ms
-nfa->accepts1("aa") => - Time for 1000 iterations: 0.318ms
-nfa->accepts1("ab") => - Time for 1000 iterations: 0.276ms
-nfa->accepts1("ac") => - Time for 1000 iterations: 0.273ms
-nfa->accepts1("abc") => - Time for 1000 iterations: 0.464ms
-nfa->accepts1("abca") => - Time for 1000 iterations: 0.736ms
-nfa->accepts1("abcb") => - Time for 1000 iterations: 0.737ms
-nfa->accepts1("abcc") => - Time for 1000 iterations: 0.737ms
-nfa->accepts1("aaaabbbbcccc") => - Time for 1000 iterations: 5.114ms
-nfa->accepts1("abcabcabcabc") => - Time for 1000 iterations: 5.188ms
-nfa->accepts1("aabbccbbcca") => - Time for 1000 iterations: 4.349ms
-nfa->accepts1("aaaaaaaa") => - Time for 1000 iterations: 3.401ms
-nfa->accepts1("bbbbbbbb") => - Time for 1000 iterations: 3.446ms
-nfa->accepts1("cccccccc") => - Time for 1000 iterations: 3.353ms
-nfa->accepts1("d") => - Time for 1000 iterations: 0ms
-nfa->accepts1("xyz") => - Time for 1000 iterations: 0ms
-```
-
-```c++
-Testing accepts2:
-nfa->accepts2("a") => - Time for 1000 iterations: 0ms
-nfa->accepts2("b") => - Time for 1000 iterations: 0ms
-nfa->accepts2("c") => - Time for 1000 iterations: 0ms
-nfa->accepts2("aa") => - Time for 1000 iterations: 0.001ms
-nfa->accepts2("ab") => - Time for 1000 iterations: 0.001ms
-nfa->accepts2("ac") => - Time for 1000 iterations: 0.001ms
-nfa->accepts2("abc") => - Time for 1000 iterations: 0.003ms
-nfa->accepts2("abca") => - Time for 1000 iterations: 0.001ms
-nfa->accepts2("abcb") => - Time for 1000 iterations: 0.003ms
-nfa->accepts2("abcc") => - Time for 1000 iterations: 0.004ms
-nfa->accepts2("aaaabbbbcccc") => - Time for 1000 iterations: 0.029ms
-nfa->accepts2("abcabcabcabc") => - Time for 1000 iterations: 0.013ms
-nfa->accepts2("aabbccbbcca") => - Time for 1000 iterations: 0.003ms
-nfa->accepts2("aaaaaaaa") => - Time for 1000 iterations: 0.002ms
-nfa->accepts2("bbbbbbbb") => - Time for 1000 iterations: 0.002ms
-nfa->accepts2("cccccccc") => - Time for 1000 iterations: 0.003ms
-nfa->accepts2("d") => - Time for 1000 iterations: 0ms
-nfa->accepts2("xyz") => - Time for 1000 iterations: 0ms
-```
-
-```c++
-Testing accepts3:
-nfa->accepts3("a") => - Time for 1000 iterations: 0.006ms
-nfa->accepts3("b") => - Time for 1000 iterations: 0.006ms
-nfa->accepts3("c") => - Time for 1000 iterations: 0.006ms
-nfa->accepts3("aa") => - Time for 1000 iterations: 0.011ms
-nfa->accepts3("ab") => - Time for 1000 iterations: 0.01ms
-nfa->accepts3("ac") => - Time for 1000 iterations: 0.01ms
-nfa->accepts3("abc") => - Time for 1000 iterations: 0.016ms
-nfa->accepts3("abca") => - Time for 1000 iterations: 0.023ms
-nfa->accepts3("abcb") => - Time for 1000 iterations: 0.023ms
-nfa->accepts3("abcc") => - Time for 1000 iterations: 0.023ms
-nfa->accepts3("aaaabbbbcccc") => - Time for 1000 iterations: 0.069ms
-nfa->accepts3("abcabcabcabc") => - Time for 1000 iterations: 0.078ms
-nfa->accepts3("aabbccbbcca") => - Time for 1000 iterations: 0.067ms
-nfa->accepts3("aaaaaaaa") => - Time for 1000 iterations: 0.039ms
-nfa->accepts3("bbbbbbbb") => - Time for 1000 iterations: 0.039ms
-nfa->accepts3("cccccccc") => - Time for 1000 iterations: 0.039ms
-nfa->accepts3("d") => - Time for 1000 iterations: 0.002ms
-nfa->accepts3("xyz") => - Time for 1000 iterations: 0.002ms
-```
-
 ### Auswertung und weitere Möglichkeiten
 
-Weiterführend könnte man auch die Durschnittszeit für jeden Teststring aus Variante 2 berechnen. Ein Vergleich lässt
-sich aber mit den bisherigen Ergebnissen schon machen.
+Weiterführend könnte man auch die Durchschnittszeit für jeden Teststring für viele Iterationen berechnet werden. Ein Vergleich lässt sich aber mit den bisherigen Ergebnissen schon machen.
 
-Bei `accepts1` liegen die Messwerte im Bereich 0.003ms bis 6.4ms. Für längere und komplexere Strings (z.B. "
-aaaabbbbcccc" mit 6.3958ms) scheint das Multithreading einen größeren Overhead zu erzeugen, denn bei kurzen Eingaben (
-z.B. "a", "b", "c", "d") ist die Verarbeitungszeit entsprechend kurz.
+Bei `accepts1` liegen die Messwerte im Bereich 0.003ms bis 6.4ms. Für längere und komplexere Strings (z.B. "aaaabbbbcccc" mit 6.3958ms) scheint das Multithreading einen größeren Overhead zu erzeugen, denn bei kurzen Eingaben (z.B. "a", "b", "c") ist die Verarbeitungszeit entsprechend kurz.
 
-Bei `accepts2`liegen die Zeiten im Bereich von 0.002ms bis 0.0396ms. Die Methode ist deutlich schneller als `accepts1`,
-insbesondere bei kurzen Eingaben. Es gibt eine leichte Steigerung bei komplexeren Eingaben, aber die Zeiten bleiben
-insgesamt sehr niedrig, was darauf hindeutet, dass das Backtracking effizienter ist und mit geringem Overhead arbeitet.
+Bei `accepts2`liegen die Zeiten im Bereich von 0.002ms bis 0.0396ms. Die Methode ist deutlich schneller als `accepts1`, insbesondere bei kurzen Eingaben. Es gibt eine leichte Steigerung bei komplexeren Eingaben, aber die Zeiten bleiben insgesamt sehr niedrig, was darauf hindeutet, dass das Backtracking effizienter ist und mit geringem Overhead arbeitet.
 
-Bei `accepts2` liegen die Zeiten im Bereich von 0.023ms bis 0.131ms. Diese Implementierung hat im Vergleich zu den
-anderen Beiden eine mittlere Performance. Sie ist schneller als `accepts1`, aber langsamer als `accepts2`. Die Zeit für
-längere und komplexere Eingaben ist etwas höher als bei `accepts2`, was darauf hinweist, dass das Tracing von State-Sets
-hier zusätzliche Berechnungen und Overhead verursacht.
+Bei `accepts2` liegen die Zeiten im Bereich von 0.023ms bis 0.131ms. Diese Implementierung hat im Vergleich zu den anderen Beiden eine mittlere Performance. Sie ist schneller als `accepts1`, aber langsamer als `accepts2`. Die Zeit für längere und komplexere Eingaben ist etwas höher als bei `accepts2`, was darauf hinweist, dass das Tracing von State-Sets hier zusätzliche Berechnungen und Overhead verursacht.
 
 ## c)
 
-Die Funktion dfaOf konvertiert einen Nichtdeterministischen Endlichen Automaten (NFA) in einen Deterministischen
-Endlichen Automaten (DFA).
+Die Funktion dfaOf konvertiert einen Nichtdeterministischen Endlichen Automaten (NFA) in einen Deterministischen Endlichen Automaten (DFA).
 
-Zuerst wird die Zustandsübergangsfunktion für den DFA aufgebaut, indem die epsilon-Abschlüsse der Zustände und deren
-Übergänge für jedes mögliche Symbol berechnet werden. Neue Zustandsmengen werden dabei iterativ erstellt, bis alle
-möglichen Zustandsmengen untersucht wurden.
+Zuerst wird die Zustandsübergangsfunktion für den DFA aufgebaut, indem die epsilon-Abschlüsse der Zustände und deren Übergänge für jedes mögliche Symbol berechnet werden. Neue Zustandsmengen werden dabei iterativ erstellt, bis alle möglichen Zustandsmengen untersucht wurden.
 
 Dann wird der Startzustand des DFA gesetzt, der der epsilon-Abschluss des Startzustands des NFA ist.
 
-Schließlich werden die Finalzustände des DFA definiert, indem überprüft wird, ob einer der Zustände der
-NFA-Finalzustände enthält.
+Schließlich werden die Finalzustände des DFA definiert, indem überprüft wird, ob einer der Zustände der NFA-Finalzustände enthält.
 
 Am Ende gibt die Funktion den neu konstruierten DFA zurück.
 
@@ -958,94 +712,12 @@ dfaOfNfa:
 
 <div style="text-align: center;">
 <img src="./data/3_c.svg" alt="Image description">
-<figcaption><i>Figure TODO: Visualized Automaton</i></figcaption>
+<figcaption><i>Figure 3: Visualized Automaton</i></figcaption>
 </div>
 
 ## d)
 
-Die Methode `minimalOf` erstellt einen minimalen Deterministischen Endlichen Automaten (DFA) aus einem gegebenen DFA,
-indem sie die Äquivalenz von Zuständen überprüft und nicht äquivalente Zustände zusammenfasst.
-
-```c++
-DFA *DFA::minimalOf() const {
-
-  NeTable ne; // table to define non-equivalent states
-
-  // 1.  "table filling algorithm"
-  // 1.a initialize ne table with false
-  for (const State &si: S)
-    for (const State &sj: S)
-      ne[si][sj] = false;
-  // 1.b final and non-final states are not equivalent
-  for (const State &f : F)
-    for (const State &s : (S - F))
-      ne[f][s] =
-      ne[s][f] = true;
-  // 1.c now compute (non-)equivalent states
-  bool anyChange = true;
-  while (anyChange) {
-    anyChange = false;
-    for (const State &si: S)
-      for (const State &sj: S)
-          if ( (si != sj) && !ne[si][sj]) // si, sj seem to be equivalent
-          for (TapeSymbol tSy: V) {
-            State destSi = delta[si][tSy];
-            State destSj = delta[sj][tSy];
-            if ( (destSi != destSj) &&
-                 ( !defined(destSi) ||
-                   !defined(destSj) ||
-                   ne[destSi][destSj] ) )
-              ne[si][sj] = // true  // si and sj ...
-              ne[sj][si] = // true  // ... are not equivalent
-              anyChange  = true;
-          }
-  }
-
-  // 2. from ne table create the partition of S (= a set of subsets)
-  SetOfStateSets partition;
-  for (const State &si: S) {
-    StateSet subset = StateSet(si);
-    for (const State &sj: S)
-      if ( (    si != sj  ) &&
-           (!ne[si]  [sj]) )  // si and sj are equiv.
-        subset.insert(sj);
-    partition.insert(subset);
-  }
-
-  FABuilder fab; // builder for the minimal DFA
-
-  // 3. compute transitions for minimal DFA in builder
-  for (const StateSet &srcStateSet: partition) {
-    const State &srcState = srcStateSet.anyElement();
-    for (TapeSymbol tSy: V) {
-      const State &destState = delta[srcState][tSy];
-      for (const StateSet &subset: partition)
-        if (subset.contains(destState)) {
-          fab.addTransition(srcStateSet.stateOf(), tSy,
-                    /*dest*/subset.     stateOf());
-          break;
-        }
-    }
-  }
-
-  // 4. look for start state s1 and define new s1 for min. DFA
-  for (const StateSet &subset: partition)
-    if (subset.contains(s1)) {
-      fab.setStartState(subset.stateOf());
-      break; // as s1 is in one subset only
-    }
-
-  // 5. look for final states f and define new F for min. DFA
-  for (const StateSet &subset: partition)
-    for (const State &f: F)
-      if (subset.contains(f))
-        fab.addFinalState(subset.stateOf());
-
-  return fab.buildDFA();
-}
-```
-
-Ergebnis:
+Die Methode `minimalOf` erstellt einen minimalen Deterministischen Endlichen Automaten (DFA) aus einem gegebenen DFA, indem sie die Äquivalenz von Zuständen überprüft und nicht äquivalente Zustände zusammenfasst.
 
 ```c++
 minDfaOfNfa:
@@ -1068,13 +740,14 @@ minDfaOfNfa:
 
 <div style="text-align: center;">
 <img src="./data/3_d.svg" alt="Image description">
-<figcaption><i>Figure TODO: Visualized Automaton</i></figcaption>
+<figcaption><i>Figure 4: Visualized Automaton</i></figcaption>
 </div>
 
 Der DFA von Aufgabe 3c) verändert sich nicht, wenn man `minimalOf` darauf ausführt, da der DFA bereits minimal ist.
 
-Das bedeutet, dass der DFA keine äquivalenten Zustände hat, die zusammengefasst werden könnten, ohne das Verhalten des
-Automaten zu verändern.
+Das bedeutet, dass der DFA keine äquivalenten Zustände hat, die zusammengefasst werden könnten, ohne das Verhalten des Automaten zu verändern.
+
+<div style="page-break-before: always;"></div>
 
 # Aufgabe 4
 
@@ -1181,8 +854,7 @@ $\delta$(Z, number, number) = (Z, $\epsilon$)
 
 Gegebener erweiterter Kellerautomat-Algorithmus (bottom-up):
 
-Der erweiterte Kellerautomat besitzt zwei Zustände, Z und R. Dabei ist R ist Endzustand. Sein Kel-
-ler enthält im Startzustand das nicht zur Grammatik gehörende Symbol $.
+Der erweiterte Kellerautomat besitzt zwei Zustände, Z und R. Dabei ist R ist Endzustand. Sein Keller enthält im Startzustand das nicht zur Grammatik gehörende Symbol $.
 
 - S.1: Erzeuge für jede Regel A → $\alpha$ einen Übergang
   $\delta$(Z, $\epsilon$, α) = (Z, A).
@@ -1300,21 +972,102 @@ Gegebener Satz:
 |- (R, ϵ . ϵ)
 ```
 
-# Aufgabe 5
+<div style="page-break-before: always;"></div>
 
-```ebnf
-progmod → MODULE id : priority ; imppart block id .
-priority → const | 
-imppart → FROM id IMPORT implist | IMPORT implist
-implist → id | id , implist
-block → dclpart statpart | statpart
-dclpart → DECL | DECL ; dclpart
-statpart → BEGIN statseq ; END
-statseq → STAT | STAT ; statseq
-```
+# Aufgabe 5
 
 ## a)
 
+### progmod → MODULE id : priority ; imppart block id .
+
+$First_1(progmod) = \{MODULE\}$
+
+$Follow_1(progmod)=\{\$\}$
+
+### priority → const | $\epsilon$
+
+$First_1(priority)=\{const,ϵ\}$
+
+$Follow_1(priority)=\{;\}$
+
+### imppart → FROM id IMPORT implist | IMPORT implist
+
+$First_1(imppart)=\{FROM,IMPORT\}$
+
+$Follow_1(imppart)=\{DECL,BEGIN\}$
+
+### implist → id | id , implist
+
+$First_1(implist)=\{id\}$
+
+$Follow_1(implist)=\{;\}$
+
+### block → dclpart statpart | statpart
+
+$First_1(block)=\{DECL,BEGIN\}$
+
+$Follow_1(block)=\{id\}$
+
+### dclpart → DECL | DECL ; dclpart
+
+$First_1(dclpart)=\{DECL\}$
+
+$Follow_1(dclpart)=\{BEGIN\}$
+
+### statpart → BEGIN statseq ; END
+
+$First_1(statpart)=\{BEGIN\}$
+
+$Follow_1(statpart)=\{id\}$
+
+### statseq → STAT | STAT ; statseq
+
+$First_1(statseq)=\{STAT\}$
+
+$Follow_1(statseq)=\{;\}$
+
 ## b)
 
+- k = 0? Nein, da es Alternativen in den Regeln gibt.
+- k = 1? Nein, da $Follow_1(imppart)=\{DECL,BEGIN\}$
+- k = 2? Ja, da $Follow_2(imppart)=\{id, \$\}$, das heißt, dass ein Lookahead von 2 Zeichen ausreicht, um die
+  nächste Regel zu bestimmen.
+
+oder
+
+$$
+\text{imppart} \to \text{FROM} \ \text{id} \ \text{IMPORT} \ \text{implist} \mid \text{IMPORT} \ \text{implist}
+$$
+
+Die $First_1$-Mengen der beiden Alternativen sind:
+
+$$
+\text{First}_1(\alpha_1) = \{\text{FROM}\}, \quad \text{First}_1(\alpha_2) = \{\text{IMPORT}\}
+$$
+
+Die $Follow_1$-Menge von $\text{imppart}$ ist:
+
+$$
+\text{Follow}_1(\text{imppart}) = \{\text{DECL}, \text{BEGIN}\}
+$$
+
+Für k=1 gibt es eine Überschneidung der $First_1$-Mengen von $\alpha_1$ und $\alpha_2$, da der Parser nicht sicher entscheiden kann, ob er `FROM` oder `IMPORT` auswählen soll, wenn er auf **`DECL`** oder **`BEGIN`** trifft. Daher gibt es einen Konflikt.
+
+Um diesen Konflikt zu vermeiden, benötigen wir k=2, da der Parser so genug Informationen aus dem Kontext erhalten kann, um zwischen den Alternativen zu entscheiden.
+
+Daher sollte die Grammatik mit LL(2) geparst werden können.
+
 ## c)
+
+Die für den LL(1)-Umbau relevante Regel ist $\text{imppart} \to \text{FROM} \ \text{id} \ \text{IMPORT} \ \text{implist} \mid \text{IMPORT} \ \text{implist}$.
+Um den Konflikt aufzulösen, können wir die Regel in zwei separate Regeln aufteilen:
+
+$$
+\text{imppart} \to \text{IMPORT} \ \text{implistpart}
+$$
+
+$$
+\text{implistpart} \to \text{FROM} \ \text{id} \ \text{IMPORT} \ \text{implist} \mid \epsilon
+$$
+
+Das heißt $First_1$(immpart) = {IMPORT} und $First_1$(implistpart) = {FROM, $\epsilon$} und es gibt keine Überschneidung der $First_1$-Mengen mehr.
