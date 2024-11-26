@@ -1,0 +1,41 @@
+/* custom.css */
+
+@page {
+    size: a4;
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+    margin-left: 4rem;
+    margin-right: 4rem;
+  }
+
+body {
+    margin: 0; /* Removes any default body margin */
+    padding: 0; /* Removes any default body padding */
+    line-height: 1.5; /* Adjust line-height for readability */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0.5em; /* Adjust heading margins */
+    margin-bottom: 0.5em;
+}
+
+p {
+    margin: 0.5em 0; /* Adjust paragraph margins */
+}
+
+/* Code Block Style */
+pre {
+    background-color: #f0f0f0; /* Light grey background for code blocks */
+    border: 1px solid #ccc; /* Light grey border */
+    border-radius: 4px; /* Rounded corners for aesthetics */
+    padding: 0.5rem; /* Padding inside the code block */
+    overflow: auto; /* Add scroll if content is too large */
+    white-space: pre-wrap; /* Wrap long lines */
+}
+
+/* Style for inline code */
+code {
+    background-color: #e8e8e8; /* Slightly darker grey for inline code */
+    padding: 2px 4px; /* Padding for inline code */
+    border-radius: 3px; /* Rounded corners for inline code */
+}

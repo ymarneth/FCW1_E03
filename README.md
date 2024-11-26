@@ -1,9 +1,4 @@
----
-title: "FCW1 - Übung 3"
-author: [ Yvonne Marneth ]
-date: "2024-11-26"
-keywords: [ Markdown, Example ]
-...
+<link rel="stylesheet" type="text/css" href="markdown.css">
 
 # Aufgabe 1
 
@@ -51,10 +46,10 @@ NFA *faOf(const Grammar *g) {
 }
 ```
 
-<div style="page-break-after: always;"></div>
+<div style="page-break-before: always;"></div>
 
 Getestet wurde die Funktion mit der folgenden Grammatik, die auch in der bereits vorhandenen Testfunktion
-testNFAFromGrammar verwendet wird:
+`testNFAFromGrammar` verwendet wird:
 
 ```c++
 void testNFAFromGrammar() {
@@ -97,7 +92,7 @@ und Darstellung
 <figcaption><i>Figure 1: NFA from Grammar</i></figcaption>
 </div>
 
-<div style="page-break-after: always;"></div>
+<div style="page-break-before: always;"></div>
 
 ## Umgekehrte Transformation von NFA in eine reguläre Grammatik
 
@@ -158,7 +153,7 @@ Grammar *grammarOf(const NFA *nfa) {
 
 Überprüfen lässt sich das Ergebnis, indem aus einer Grammatik G(S) ein NFA mit der Funktion `*faOf(const Grammar *g)` in
 einen NFA umgewandelt und anschließend mit `Grammar *grammarOf(const NFA *nfa)` wieder in eine Grammatik transformiert
-wird. Die resultierende Grammatik sollte der anfänglichen Grammatik entsprechen.
+wird. Die resultierende Grammatik sollte der ursprünglichen Grammatik entsprechen.
 
 Getestet wurde die Funktion daher mit der folgenden Grammatik, die auch in der bereits vorhandenen Testfunktion
 `testNFAFromGrammar` verwendet wird:
@@ -199,7 +194,7 @@ VNt = { 1, 2, 3, 4 }, deletable: {  }
 VT  = { a, b }
 ```
 
-<div style="page-break-after: always;"></div>
+<div style="page-break-before: always;"></div>
 
 # Aufgabe 2
 
@@ -249,6 +244,8 @@ dfa->accepts("bzzb") =>  (accepted)
 dfa->accepts("z") =>  (rejected)
 dfa->accepts("bbba") =>  (rejected)
 ```
+
+<div style="page-break-before: always;"></div>
 
 ## b)
 
@@ -382,7 +379,7 @@ Ausgabeband: cddc
 Eingabe akzeptiert!
 ```
 
-<div style="page-break-after: always;"></div>
+<div style="page-break-before: always;"></div>
 
 # Aufgabe 3
 
@@ -429,7 +426,7 @@ bool NFA::accepts1(const Tape &tape) const {
 }
 ```
 
-<div style="page-break-after: always;"></div>
+<div style="page-break-before: always;"></div>
 
 ### `accepts2`
 
@@ -576,8 +573,6 @@ ausgegeben wird, ob der NFA ihn akzeptiert oder ablehnt.
     testMethod("accepts2", [&](const string &input) { return nfa->accepts2(input); });
     testMethod("accepts3", [&](const string &input) { return nfa->accepts3(input); });
 ```
-
-<div style="page-break-after: always;"></div>
 
 ### Testergebnisse
 
