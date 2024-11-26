@@ -26,29 +26,29 @@ MooreDFA::MooreDFA(const StateSet &S, const TapeSymbolSet &V,
 }
 
 bool MooreDFA::accepts(const Tape &tape) const {
-    int i = 0; // index of first symbol
-    TapeSymbol tSy = tape[i]; // fetch first tape symbol
-    State s = s1; // start state
+    int i = 0; // Index des ersten Symbols
+    TapeSymbol tSy = tape[i]; // Erstes Tape-Symbol
+    State s = s1; // Startzustand
 
-    // Output the start state's corresponding output
-    cout << lambda.at(s); // this should print 'c' for state B at the beginning
+    // Ausgabe des Startzustands (vor Verarbeitung der Eingabe)
+    std::cout << lambda.at(s);
 
-    onStateEntered(s);
-
-    while (tSy != eot) { // eot = end of tape
-        s = delta[s][tSy]; // transition to the next state
-        if (!defined(s))
-            return false; // state is undefined, so no acceptance
-
-        // Output the corresponding symbol for the current state
-        cout << lambda.at(s); // should print 'd' for state R when transitioning to R for 'z'
-        onStateEntered(s);
+    while (tSy != eot) { // Solange das Ende des Bands nicht erreicht ist
+        s = delta[s][tSy]; // Übergang zum nächsten Zustand
+        if (!defined(s)) {
+            return false; // Ungültiger Zustand
+        }
 
         i++;
-        tSy = tape[i]; // fetch next symbol
-    } // while
+        tSy = tape[i]; // Nächstes Symbol vom Band
 
-    return F.contains(s); // accepted if the final state is in the final state set
+        // Ausgabe des Zustands NACH dem Wechsel, ABER VOR dem Lesen des nächsten Symbols
+        if (tSy != eot) {
+            std::cout << lambda.at(s);
+        }
+    }
+
+    return F.contains(s); // Akzeptieren, wenn Zustand final ist
 }
 
 void MooreDFA::onStateEntered(const State &s) const {

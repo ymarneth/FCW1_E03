@@ -280,31 +280,35 @@ void testMooreTranslation() {
     cout << endl;
 
     FABuilder builder;
+
+    // Konfiguriere den Automaten
     builder.setStartState("B")
-            .addFinalState("R")
-            .addTransition("B", 'b', "R")
-            .addTransition("R", 'b', "R")
-            .addTransition("R", 'z', "R")
-            .setMooreLambda({
-                {"B", 'c'},
-                {"R", 'd'}
-            });
+           .addFinalState("R")
+           .addTransition("B", 'b', "R")
+           .addTransition("R", 'b', "R")
+           .addTransition("R", 'z', "R");
 
-    const unique_ptr<DFA> mooreDfa(builder.buildMooreDFA());
+    // Zustands-Ausgabe-Mapping (lambda-Funktion)
+    builder.setMooreLambda({
+        {"B", 'c'}, // Startzustand -> 'c' für Buchstabe
+        {"R", 'd'}  // Zustand für Ziffern -> 'd'
+    });
 
-    cout << "mooreDfa:" << endl << *mooreDfa;
-    vizualizeFA("mooreDfa", mooreDfa.get());
+    // Erstelle den Moore-DFA
+    const std::unique_ptr<MooreDFA> mooreDfa(builder.buildMooreDFA());
 
-    auto testInput = [&](const string &input) {
-        cout << "dfa->accepts(\"" << input << "\") => ";
-        if (mooreDfa->accepts(input)) {
-            cout << " (accepted)" << endl;
-        } else {
-            cout << " (rejected)" << endl;
-        }
-    };
+    // Eingabeband vorbereiten (bzzb -> cddc)
+    Tape tape = {'b', 'z', 'z', 'b', eot};
 
-    testInput("bzzb");
+    std::cout << "Eingabeband: bzzb" << std::endl;
+    std::cout << "Ausgabeband: ";
+
+    // Automaton ausführen und akzeptieren testen
+    if (mooreDfa->accepts(tape)) {
+        std::cout << "\nEingabe akzeptiert!" << std::endl;
+    } else {
+        std::cout << "\nEingabe nicht akzeptiert!" << std::endl;
+    }
 
     cout << endl;
 }
@@ -447,7 +451,7 @@ int main(int argc, char *argv[]) {
         /*testDfaOf();
         cout << endl;*/
 
-        testAcceptsWithDFA();
+        testMooreTranslation();
         cout << endl;
     } catch (const exception &e) {
         cerr << "EXCEPTION (" << typeid(e).name() << "): " << e.what() << endl;
