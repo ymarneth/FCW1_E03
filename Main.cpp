@@ -313,6 +313,41 @@ void testMooreTranslation() {
     cout << endl;
 }
 
+void testMealyTranslation() {
+    cout << "6. Mealy Translation" << endl;
+    cout << "------------------------" << endl;
+    cout << endl;
+
+    FABuilder builder;
+
+    builder.setStartState("B")
+            .addFinalState("R")
+            .addTransition("B", 'b', "R")
+            .addTransition("R", 'b', "R")
+            .addTransition("R", 'z', "R")
+            .setMealyLambda({
+                {{"B", 'b'}, 'c'},
+                {{"B", 'z'}, 'd'},
+                {{"R", 'b'}, 'c'},
+                {{"R", 'z'}, 'd'}
+            });
+
+    const std::unique_ptr<MealyDFA> mealyDfa(builder.buildMealyDFA());
+
+    std::cout << "Eingabeband: bzzb" << std::endl;
+    std::cout << "Ausgabeband: ";
+
+    if (mealyDfa->accepts("bzzb")) {
+        cout << endl;
+        std::cout << "Eingabe akzeptiert!" << std::endl;
+    } else {
+        cout << endl;
+        std::cout << "Eingabe nicht akzeptiert!" << std::endl;
+    }
+
+    cout << endl;
+}
+
 void testNFAAccepts() {
     cout << "7. Test accepts methods" << endl;
     cout << "------------------------" << endl;
@@ -452,6 +487,9 @@ int main(int argc, char *argv[]) {
         cout << endl;*/
 
         testMooreTranslation();
+        cout << endl;
+
+        testMealyTranslation();
         cout << endl;
     } catch (const exception &e) {
         cerr << "EXCEPTION (" << typeid(e).name() << "): " << e.what() << endl;

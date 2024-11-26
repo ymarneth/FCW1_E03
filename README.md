@@ -1,8 +1,8 @@
 ---
 title: "FCW1 - Übung 3"
-author: [Yvonne Marneth]
+author: [ Yvonne Marneth ]
 date: "2024-11-26"
-keywords: [Markdown, Example]
+keywords: [ Markdown, Example ]
 ...
 
 # Aufgabe 1
@@ -205,8 +205,10 @@ VT  = { a, b }
 
 ## a)
 
+### Implementation
+
 ```c++
-FABuilder builder;
+    FABuilder builder;
     builder.setStartState("B")
             .addFinalState("R")
             .addTransition("B", 'b', "R")
@@ -217,20 +219,168 @@ FABuilder builder;
 
     cout << "dfa:" << endl << *dfa;
     vizualizeFA("dfa", dfa.get());
-    cout << "dfa->accepts(\"b\") = " << dfa->accepts("b") << endl;
-    cout << "dfa->accepts(\"bzb\") = " << dfa->accepts("bzb") << endl;
-    cout << "dfa->accepts(\"bbb\") = " << dfa->accepts("bbb") << endl;
-    cout << "dfa->accepts(\"bbzbb\") = " << dfa->accepts("bbzbb") << endl;
-    cout << "dfa->accepts(\"z\")   = " << dfa->accepts("z") << endl;
-    cout << "dfa->accepts(\"zzbb\") = " << dfa->accepts("zzbb") << endl;
-    cout << "dfa->accepts(\"zzzz\") = " << dfa->accepts("zzzz") << endl;
-    cout << "dfa->accepts(\"bbba\") = " << dfa->accepts("bbba") << endl;
-    cout << endl;
+
+    auto testInput = [&](const string &input) {
+        cout << "dfa->accepts(\"" << input << "\") => ";
+        if (dfa->accepts(input)) {
+            cout << " (accepted)" << endl;
+        } else {
+            cout << " (rejected)" << endl;
+        }
+    };
+
+    testInput("b");
+    testInput("bzb");
+    testInput("bbb");
+    testInput("bbzbb");
+    testInput("bzzb");
+    testInput("z");
+    testInput("bbba");
+```
+
+### Result
+
+```c++
+dfa->accepts("b") =>  (accepted)
+dfa->accepts("bzb") =>  (accepted)
+dfa->accepts("bbb") =>  (accepted)
+dfa->accepts("bbzbb") =>  (accepted)
+dfa->accepts("bzzb") =>  (accepted)
+dfa->accepts("z") =>  (rejected)
+dfa->accepts("bbba") =>  (rejected)
 ```
 
 ## b)
 
-// TODO
+Ein Mealy-Automat ist für diese Aufgabe wahrscheinlich besser geeignet als ein Moore-Automat, da er die Ausgaben
+basierend auf der aktuellen Kombination aus Zustand und Eingabesymbol generiert. Auf diese Weise kann auch das
+Bandsymbol in die Übersetzung mit einbezogen werden. Ein Moore-Automat müsste für jede Ausgabe einen eigenen Zustand
+definieren, was zu einem größeren Automaten mit höherer Komplexität führen würde.
+
+### Implementierung eines Mealy-Automaten
+
+Der Konstruktor eines Mealy-Automaten initialisiert den Automaten mit einer Lambda-Funktion, die die Ausgaben direkt
+abhängig von der Kombination aus aktuellem Zustand und Eingabesymbol definiert.
+
+Die `accepts`-Methode überprüft, ob eine Eingabe akzeptiert wird, indem sie Ausgaben nicht nur vom Zustand,
+sondern auch vom gerade gelesenen `TapeSymbol` ableiten können. Die Methode liest das aktuelle `TapeSymbol` und bestimmt
+die entsprechende Ausgabe anhand der Lambda-Funktion. Dann geht sie zum nächsten Zustand über, der durch die
+Übergangsfunktion definiert ist.
+
+```c++
+MealyDFA::MealyDFA(const StateSet &S, const TapeSymbolSet &V,
+         const State &s1, const StateSet &F,
+         const DDelta &delta,
+         const map<pair<State, TapeSymbol>, char> &mealyLambda)
+    : DFA(S, V, s1, F, delta), lambda(mealyLambda) {
+}
+
+bool MealyDFA::accepts(const Tape &tape) const {
+    int i = 0;
+    TapeSymbol tSy = tape[i];
+    State s = s1;
+
+    std::cout << lambda.at(make_pair(s, tSy));
+
+    while (tSy != eot) {
+        s = delta[s][tSy];
+
+        if (!defined(s)) {
+            return false;
+        }
+
+        i++;
+        tSy = tape[i];
+
+        if (tSy != eot) {
+            std::cout << lambda.at(make_pair(s, tSy));
+        }
+    }
+
+    return F.contains(s);
+}
+```
+
+### Erweiterung des FABuilders
+
+Die Methode `setMealyLambda` erlaubt das Festlegen von Paaren aus Zuständen und Symbolen und den dazugehörigen
+Ausgabesymbolen. Sie stellt außerdem sicher, dass die Zustände und Symbole im Automaten gültig sind. Die Methode
+`buildMealyDFA` erzeugt eine Instanz eines `MealyDFA` und prüft dabei, ob die Lambda-Funktion definiert ist und der
+Automat
+deterministisch ist.
+
+```c++
+FABuilder &FABuilder::setMealyLambda(const std::initializer_list<std::pair<std::pair<State, TapeSymbol>, char> > il) {
+    for (const auto &[key, value]: il) {
+        const auto &stateSymbolPair = key;
+        const State &state = stateSymbolPair.first;
+        const TapeSymbol &symbol = stateSymbolPair.second;
+        const char &output = value;
+
+        if (S.find(state) == S.end()) {
+            throw runtime_error("State " + state + " not found in the automaton");
+        }
+
+        if (V.find(symbol) == V.end()) {
+            throw runtime_error("Symbol " + string(1, symbol) + " not found in the alphabet");
+        }
+
+        mealyLambda[stateSymbolPair] = output;
+    }
+
+    return *this;
+}
+
+MealyDFA *FABuilder::buildMealyDFA() const {
+    if (mealyLambda.empty())
+        throw domain_error("cannot build MealyDFA, no lambda function set");
+    if (!representsDFA())
+        throw domain_error("cannot build DFA, builder's delta represents a NFA");
+    checkStates();
+    return new MealyDFA(S, V, s1, F, dDeltaOf(delta), mealyLambda);
+}
+```
+
+### Test
+
+```c++
+    FABuilder builder;
+
+    builder.setStartState("B")
+            .addFinalState("R")
+            .addTransition("B", 'b', "R")
+            .addTransition("R", 'b', "R")
+            .addTransition("R", 'z', "R")
+            .setMealyLambda({
+                {{"B", 'b'}, 'c'},
+                {{"B", 'z'}, 'd'},
+                {{"R", 'b'}, 'c'},
+                {{"R", 'z'}, 'd'}
+            });
+
+    const std::unique_ptr<MealyDFA> mealyDfa(builder.buildMealyDFA());
+
+    std::cout << "Eingabeband: bzzb" << std::endl;
+    std::cout << "Ausgabeband: ";
+
+    if (mealyDfa->accepts("bzzb")) {
+        cout << endl;
+        std::cout << "Eingabe akzeptiert!" << std::endl;
+    } else {
+        cout << endl;
+        std::cout << "Eingabe nicht akzeptiert!" << std::endl;
+    }
+
+    cout << endl;
+```
+
+### Ergebnis
+
+```c++
+Eingabeband: bzzb
+Ausgabeband: cddc
+Eingabe akzeptiert!
+```
 
 <div style="page-break-after: always;"></div>
 

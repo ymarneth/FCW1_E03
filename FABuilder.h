@@ -17,6 +17,7 @@
 #include "TapeStuff.h"
 #include "StateStuff.h"
 #include "DeltaStuff.h"
+#include "MealyDFA.h"
 #include "MooreDFA.h"
 
 
@@ -24,6 +25,7 @@ class FA;
 class DFA;
 class NFA;
 class MooreDFA; // forward declaration for friend declaration only
+class MealyDFA; // forward declaration for friend declaration only
 
 class FABuilder final : private ObjectCounter<FABuilder> {
     friend std::ostream &operator<<(std::ostream &os, const FABuilder &fab);
@@ -35,6 +37,7 @@ class FABuilder final : private ObjectCounter<FABuilder> {
     StateSet F; // set of final states, a subset of S
 
     map<State, char> mooreLambda; // lambda function for Moore output
+    map<pair<State, TapeSymbol>, char> mealyLambda; // lambda function for Mealy output
 
     void checkStates() const;
 
@@ -76,6 +79,7 @@ public:
 
     FABuilder &setMooreLambda(const map<State, char> &mooreLambda);
 
+    FABuilder &setMealyLambda(std::initializer_list<std::pair<std::pair<State, TapeSymbol>, char>> il);
     // build methods:
 
     bool representsDFA() const;
@@ -84,6 +88,7 @@ public:
     DFA *buildDFA() const; // requires: representsDFA() == true
     NFA *buildNFA() const; // always works
     MooreDFA *buildMooreDFA() const; // requires: mooreLambda is set
+    MealyDFA *buildMealyDFA() const; // requires: mooreLambda is set
 
     // finally, a clear method that allows reuse or the builder:
     void clear();
