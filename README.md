@@ -4,7 +4,7 @@
 
 ## Umwandeln einer regulären Grammatik in einen NFA oder DFA
 
-Die Funktion `*faOf(const Grammar *g)` konvertiert eine reguläre Grammatik in einen nichtdeterministischen endlichen Automaten (NFA). Die Vorgehensweise lässt sich wie folgt zusammenfassen:
+Die Funktion `*faOf(const Grammar *g)` konvertiert eine reguläre Grammatik in einen nichtdeterministischen endlichen Automaten (NFA). Dieser Ansatz wurde gewählt, weil ein NFA auch in einen DFA transformiert werden kann.
 
 1. Die Funktion setzt das Startsymbol der Grammatik als Startzustand des NFAs.
 2. Für jede Produktionsregel der Grammatik, die ein Nichtterminalsymbol enthält, wird für das Startsymbol und das erste Symbol der Regel ein Übergang im NFA erstellt. Wenn das Ziel der Regel ein Nichtterminal ist, wird ein Übergang zwischen den entsprechenden Zuständen hinzugefügt.
@@ -12,12 +12,23 @@ Die Funktion `*faOf(const Grammar *g)` konvertiert eine reguläre Grammatik in e
 
 Am Ende wird der NFA durch den FABuilder erstellt und zurückgegeben.
 
+Einschränkungen:
+
+- Die Grammatik darf nur regulären Sequenzen beinhalten
+
+Sinnvoll wäre noch eine Behandlung von Epsilon gewesen, leider bin ich zu spät darauf gekommen und habe keine Zeit mehr das auch zu implementieren.
+
 ```c++
+bool isRegularSequence(const Sequence &seq) {
+    const auto length = seq.length();
+    return length > 0 && length < 3 && seq.symbolAt(0)->isT() && seq.symbolAt(length - 1)->isT();
+}
+
 NFA *faOf(const Grammar *g) {
     FABuilder builder;
 
     // Step 1: Set the start state of the NFA based on the root of the grammar
-    const auto startStateSymbol = dynamic_cast<NTSymbol *>(g->root);
+    const auto startStateSymbol = g->root;
     builder.setStartState(startStateSymbol->name);
 
     for (const auto &[key, value]: g->rules) {
@@ -25,6 +36,10 @@ NFA *faOf(const Grammar *g) {
         auto const &sequenceSet = value;
 
         for (const Sequence *seq: sequenceSet) {
+            if (!isRegularSequence(*seq)) {
+                throw runtime_error("Grammar is not regular");
+            }
+
             const State srcState(nt->name);
             const TapeSymbol tapeSymbol = seq->symbolAt(0)->name[0];
 
@@ -100,7 +115,7 @@ Die Funktion `Grammar *grammarOf(const NFA *nfa)` konvertiert einen nichtdetermi
 
 3. Wenn ein Zustand sowohl ein Endzustand des NFAs ist als auch der Quellzustand eines Übergangs einem Zielzustand entspricht, wird eine zusätzliche Produktionsregel hinzugefügt, die nur das Terminalsymbol enthält, um das Ende der Produktion zu kennzeichnen.
 
-4. Zum Schluss wird die Grammatik mit dem GrammarBuilder erzeugt und zurückgegeben.
+Zum Schluss wird die Grammatik mit dem GrammarBuilder erzeugt und zurückgegeben.
 
 ```c++
 void addProductionRules(GrammarBuilder *builder,
@@ -222,7 +237,7 @@ VT  = { a, b }
     testInput("bbba");
 ```
 
-### Result
+### Ergebnis
 
 ```c++
 dfa->accepts("b") =>  (accepted)
@@ -629,67 +644,15 @@ Auf diese Weise sind die Werte vergleichbarer.
 
 ### Auswertung und weitere Möglichkeiten
 
-Weiterführend könnte man auch die Durchschnittszeit für jeden Teststring für viele Iterationen berechnet werden. Ein Vergleich lässt sich aber mit den bisherigen Ergebnissen schon machen.
+Alternativ könnte man auch die Durchschnittszeit für jeden Teststring für viele Iterationen berechnet werden. Ein Vergleich lässt sich aber mit den bisherigen Ergebnissen schon machen.
 
 Bei `accepts1` liegen die Messwerte im Bereich 0.003ms bis 6.4ms. Für längere und komplexere Strings (z.B. "aaaabbbbcccc" mit 6.3958ms) scheint das Multithreading einen größeren Overhead zu erzeugen, denn bei kurzen Eingaben (z.B. "a", "b", "c") ist die Verarbeitungszeit entsprechend kurz.
 
 Bei `accepts2`liegen die Zeiten im Bereich von 0.002ms bis 0.0396ms. Die Methode ist deutlich schneller als `accepts1`, insbesondere bei kurzen Eingaben. Es gibt eine leichte Steigerung bei komplexeren Eingaben, aber die Zeiten bleiben insgesamt sehr niedrig, was darauf hindeutet, dass das Backtracking effizienter ist und mit geringem Overhead arbeitet.
 
-Bei `accepts2` liegen die Zeiten im Bereich von 0.023ms bis 0.131ms. Diese Implementierung hat im Vergleich zu den anderen Beiden eine mittlere Performance. Sie ist schneller als `accepts1`, aber langsamer als `accepts2`. Die Zeit für längere und komplexere Eingaben ist etwas höher als bei `accepts2`, was darauf hinweist, dass das Tracing von State-Sets hier zusätzliche Berechnungen und Overhead verursacht.
+Bei `accepts3` liegen die Zeiten im Bereich von 0.023ms bis 0.131ms. Diese Implementierung hat im Vergleich zu den anderen Beiden eine mittlere Performance. Sie ist schneller als `accepts1`, aber langsamer als `accepts2`. Die Zeit für längere und komplexere Eingaben ist etwas höher als bei `accepts2`, was darauf hinweist, dass das Tracing von State-Sets hier zusätzliche Berechnungen und Overhead verursacht.
 
 ## c)
-
-Die Funktion dfaOf konvertiert einen Nichtdeterministischen Endlichen Automaten (NFA) in einen Deterministischen Endlichen Automaten (DFA).
-
-Zuerst wird die Zustandsübergangsfunktion für den DFA aufgebaut, indem die epsilon-Abschlüsse der Zustände und deren Übergänge für jedes mögliche Symbol berechnet werden. Neue Zustandsmengen werden dabei iterativ erstellt, bis alle möglichen Zustandsmengen untersucht wurden.
-
-Dann wird der Startzustand des DFA gesetzt, der der epsilon-Abschluss des Startzustands des NFA ist.
-
-Schließlich werden die Finalzustände des DFA definiert, indem überprüft wird, ob einer der Zustände der NFA-Finalzustände enthält.
-
-Am Ende gibt die Funktion den neu konstruierten DFA zurück.
-
-```c++
-DFA *NFA::dfaOf() const {
-    FABuilder fab;
-
-    // 1. construct new delta function for DFA (S and V implicitly)
-    const StateSet startStateSet = epsClosureOf(s1);
-    SetOfStateSets allStateSets = startStateSet;
-    SetOfStateSets sstc = startStateSet; // StateSets to check
-
-    while (!sstc.empty()) {
-        StateSet srcStateSet = sstc.anyElement();
-        sstc.erase(srcStateSet);
-        for (const TapeSymbol tSy: V) {
-            StateSet destStateSet =
-                    epsClosureOf(allDestsFor(srcStateSet, tSy));
-            if (!destStateSet.empty()) {
-                // transition is defined
-                if (!allStateSets.contains(destStateSet)) {
-                    allStateSets.insert(destStateSet);
-                    sstc.insert(destStateSet);
-                }
-                fab.addTransition(srcStateSet.stateOf(), tSy,
-                                  destStateSet.stateOf());
-            }
-        }
-    }
-
-    // 2. define new start state s1 for DFA
-    fab.setStartState(startStateSet.stateOf());
-
-    // 3. look for final states f and define new F for DFA
-    for (const StateSet &stateSet: allStateSets)
-        for (const State &f: F)
-            if (stateSet.contains(f))
-                fab.addFinalState(stateSet.stateOf());
-
-    return fab.buildDFA();
-}
-```
-
-Ergebnis:
 
 ```c++
 dfaOfNfa:
@@ -780,6 +743,7 @@ Gegebener Kellerautomat-Algorithmus (top-down):
 
   $\delta$(Z, $\alpha$, $\alpha$) = (Z, $\epsilon$).
 
+
 ### S.1 $A$ -> $\alpha$
 
 #### `ConstDef`
@@ -860,71 +824,66 @@ Der erweiterte Kellerautomat besitzt zwei Zustände, Z und R. Dabei ist R ist En
   $\delta$(Z, $\epsilon$, α) = (Z, A).
 - S.2: Erzeuge für jedes Terminalsymbol a einen Übergang
   $\delta$(Z, a, x) = (Z, xa) für alle x $\epsilon$ V $\cup$ {$}.
-- S.3: Erzeuge den Übergang $\delta$(Z, $\epsilon$, $S) = (R, $\epsilon$).
+- S.3: Erzeuge den Übergang $\delta$(Z, $\epsilon$, \$S) = (R, $\epsilon$).
+
 
 ### S.1 $A$ -> $\alpha$
 
-#### Schlüsselwörter
+$\delta$(Z, $\epsilon$, 'const' Type ident Init IdList ';') = (Z, ConstDef)
 
-$\delta$(Z, $\epsilon$, ′const′) = (Z, ConstDef)
+$\delta$(Z, $\epsilon$, ',' ident Init IdList) = (Z, IdList)
 
-$\delta$(Z, $\epsilon$, ′bool′) = (Z, Type)
+$\delta$(Z, $\epsilon$, $\epsilon$) = (Z, IdList)
 
-$\delta$(Z, $\epsilon$, ′int′) = (Z, Type)
+$\delta$(Z, $\epsilon$, 'bool') = (Z, Type)
 
-$\delta$(Z, $\epsilon$, ′false′) = (Z, BoolOrNumber)
+$\delta$(Z, $\epsilon$, 'int') = (Z, Type)
 
-$\delta$(Z, $\epsilon$, ′true′) = (Z, BoolOrNumber)
+$\delta$(Z, $\epsilon$, '=' BoolOrNumber) = (Z, Init)
 
-#### Symbole:
+$\delta$(Z, $\epsilon$, 'false') = (Z, BoolOrNumber)
 
-$\delta$(Z, $\epsilon$, ′=′) = (Z, Init)
+$\delta$(Z, $\epsilon$, 'true') = (Z, BoolOrNumber)
 
-$\delta$(Z, $\epsilon$, ′+′) = (Z, OptSign)
+$\delta$(Z, $\epsilon$, OptSign number) = (Z, BoolOrNumber)
 
-$\delta$(Z, $\epsilon$, ′−′) = (Z, OptSign)
+$\delta$(Z, $\epsilon$, '+') = (Z, OptSign)
 
-$\delta$(Z, $\epsilon$, ′,′) = (Z, IdList)
+$\delta$(Z, $\epsilon$, '-') = (Z, OptSign)
 
-$\delta$(Z, $\epsilon$, ′;′) = (Z, ConstDef)
-
-#### Literale:
-
-$\delta$(Z, $\epsilon$, number) = (Z, BoolOrNumber)
+$\delta$(Z, $\epsilon$, $\epsilon$) = (Z, OptSign)
 
 ### S.2 Übergänge für Terminalsymbole $\alpha$
 
 #### Schlüsselwörter
 
-$\delta$(Z, 'const', x) = (Z, x 'const')
+$\delta$(Z,'bool', 'const') = (Z, 'const' 'bool')
 
-$\delta$(Z, 'bool', x) = (Z, x 'bool')
+$\delta$(Z,'int', 'const') = (Z, 'const' 'int')
 
-$\delta$(Z, 'int', x) = (Z, x 'int')
+$\delta$(Z,'false', '=') = (Z, '=' 'false')
 
-$\delta$(Z, 'false', x) = (Z, x 'false')
-
-$\delta$(Z, 'true', x) = (Z, x 'true')
+$\delta$(Z,'true', '=') = (Z, '=' 'true')
 
 #### Symbole:
 
-$\delta$(Z, '=', x) = (Z, x '=')
+$delta$(Z, '=', ident) = (Z, ident '=')
 
-$\delta$(Z, '+', x) = (Z, x '+')
+$delta$(Z, '+', '=') = (Z, '=' '+')
 
-$\delta$(Z, '-', x) = (Z, x '-')
+$delta$(Z, '-', '=') = (Z, '=' '-')
 
-$\delta$(Z, ',', x) = (Z, x ',')
+$\delta$(Z, ',', Init) = (Z, Init ',')
 
-$\delta$(Z, ';', x) = (Z, x ';')
+$\delta$(Z, ';', IdList) = (Z, IdList ';')
 
 #### Literale:
 
-$\delta$(Z, number, x) = (Z, x number)
+$\delta$(Z, number, OptSign) = (Z, OptSign number)
 
 ### S.3 Übergang zum Endzustand
 
-$\delta$(Z, $\epsilon$, $S) = (R, $\epsilon$)
+$\delta$(Z, $\epsilon$, \$ConstDef) = (R, $\epsilon$)
 
 ## d)
 
@@ -940,12 +899,12 @@ Gegebener Satz:
 (Z, S.const int max = 100;)
 |- (Z, ';' Idlist Init ident Type 'const' . const int max = 100;)
 |- (Z, ';' Idlist Init ident Type . int max = 100’)
-|- (Z, ';' Idlist Init ident . int max = 100;)
+|- (Z, ';' Idlist Init ident int. int max = 100;)
 |- (Z, ';' Idlist Init ident . max = 100;)
 |- (Z, ';' Idlist Init . = 100;)
-|- (Z, ';' Idlist . BoolOrNumber = 100;)
-|- (Z, ';' Idlist . BoolOrNumber 100;)
-|- (Z, ';' Idlist . number 100;)
+|- (Z, ';' Idlist BoolOrNumber = . = 100;)
+|- (Z, ';' Idlist BoolOrNumber . 100;)
+|- (Z, ';' Idlist number . 100;)
 |- (Z, ';' Idlist . ;)
 |- (Z, ';' . ;)
 |- (Z, ϵ . ;)
@@ -959,16 +918,15 @@ Gegebener Satz:
 
 ```
 (Z, $S . const int max = 100;)
-|- (Z, $ ; Idlist Init ident Type . int max = 100;)
-|- (Z, $ const int . max = 100;)
-|- (Z, $ const int max . = 100;)
-|- (Z, $ const int max = . 100;)
-|- (Z, $ const int max = 100 .;)
-|- (Z, $ const int max = .number ;)
-|- (Z, $ const int max . Init ;)
-|- (Z, $ const int . Idlist ;)
-|- (Z, $ const . Type ;)
-|- (Z, $ S . ;)
+|- (Z, $ 'const' . int max = 100;)
+|- (Z, $ 'const' int . max = 100;)
+|- (Z, $ 'const' Type . max = 100;)
+|- (Z, $ 'const' Type ident . = 100;)
+|- (Z, $ 'const' Type ident '=' . 100;)
+|- (Z, $ 'const' Type ident '=' 100 . ;)
+|- (Z, $ 'const' Type ident Init . ;)
+|- (Z, $ 'const' Type ident Init ';' . ϵ)
+|- (Z, $ ConstDef . ϵ)
 |- (R, ϵ . ϵ)
 ```
 
@@ -978,96 +936,101 @@ Gegebener Satz:
 
 ## a)
 
-### progmod → MODULE id : priority ; imppart block id .
-
-$First_1(progmod) = \{MODULE\}$
-
-$Follow_1(progmod)=\{\$\}$
-
-### priority → const | $\epsilon$
-
-$First_1(priority)=\{const,ϵ\}$
-
-$Follow_1(priority)=\{;\}$
-
-### imppart → FROM id IMPORT implist | IMPORT implist
-
-$First_1(imppart)=\{FROM,IMPORT\}$
-
-$Follow_1(imppart)=\{DECL,BEGIN\}$
-
-### implist → id | id , implist
-
-$First_1(implist)=\{id\}$
-
-$Follow_1(implist)=\{;\}$
-
-### block → dclpart statpart | statpart
-
-$First_1(block)=\{DECL,BEGIN\}$
-
-$Follow_1(block)=\{id\}$
-
-### dclpart → DECL | DECL ; dclpart
-
-$First_1(dclpart)=\{DECL\}$
-
-$Follow_1(dclpart)=\{BEGIN\}$
-
-### statpart → BEGIN statseq ; END
-
-$First_1(statpart)=\{BEGIN\}$
-
-$Follow_1(statpart)=\{id\}$
-
-### statseq → STAT | STAT ; statseq
-
-$First_1(statseq)=\{STAT\}$
-
-$Follow_1(statseq)=\{;\}$
+| **Regel**      | **First1**       | **Follow1**     |
+|----------------|------------------|-----------------|
+| `progmod`      | `{MODULE}`       | `{}`            |
+| `priority`     | `{const, ϵ}`     | `{';'}`         |
+| `imppart`      | `{FROM, IMPORT}` | `{DECL, BEGIN}` |
+| `implist`      | `{id}`           | `{DECL, BEGIN}` |
+| `block`        | `{DECL, BEGIN}`  | `{id}`          |
+| `declpart`     | `{DECL}`         | `{BEGIN}`       |
+| `statpart`     | `{BEGIN}`        | `{id}`          |
+| `statseq`      | `{STAT}`         | `{';', STAT}`   |
 
 ## b)
 
-- k = 0? Nein, da es Alternativen in den Regeln gibt.
-- k = 1? Nein, da $Follow_1(imppart)=\{DECL,BEGIN\}$
-- k = 2? Ja, da $Follow_2(imppart)=\{id, \$\}$, das heißt, dass ein Lookahead von 2 Zeichen ausreicht, um die
-  nächste Regel zu bestimmen.
+### `k=0`
 
-oder
+`k=0` würde bedeuten, dass der Parser keine Lookahead-Symbole verwendet und allein durch den Zustand entscheiden muss, welche Regel anzuwenden ist.
+Da es aber Alternativen in mehreren Regeln gibt (z. B. `imppart`), trifft das nicht zu.
+
+### `k=1`
+
+Für `k=1` gibt es einen Konflikt der $First_2$-Mengen von `imppart`:
 
 $$
 \text{imppart} \to \text{FROM} \ \text{id} \ \text{IMPORT} \ \text{implist} \mid \text{IMPORT} \ \text{implist}
 $$
 
-Die $First_1$-Mengen der beiden Alternativen sind:
-
-$$
-\text{First}_1(\alpha_1) = \{\text{FROM}\}, \quad \text{First}_1(\alpha_2) = \{\text{IMPORT}\}
-$$
-
-Die $Follow_1$-Menge von $\text{imppart}$ ist:
-
 $$
 \text{Follow}_1(\text{imppart}) = \{\text{DECL}, \text{BEGIN}\}
 $$
 
-Für k=1 gibt es eine Überschneidung der $First_1$-Mengen von $\alpha_1$ und $\alpha_2$, da der Parser nicht sicher entscheiden kann, ob er `FROM` oder `IMPORT` auswählen soll, wenn er auf **`DECL`** oder **`BEGIN`** trifft. Daher gibt es einen Konflikt.
 
-Um diesen Konflikt zu vermeiden, benötigen wir k=2, da der Parser so genug Informationen aus dem Kontext erhalten kann, um zwischen den Alternativen zu entscheiden.
+Um diesen Konflikt zu vermeiden, benötigen wir mindestens k=2, da der Parser so genug Informationen aus dem Kontext erhalten kann, um zwischen den Alternativen zu entscheiden.
 
-Daher sollte die Grammatik mit LL(2) geparst werden können.
+### `k=2`
+
+Bei der Regel `statseq`
+
+$$
+\text{statseq} \to \text{STAT} \mid \text{STAT} \ \text{;} \ \text{statseq}
+$$
+
+$$
+\text{First}_1(\text{statseq}) = \{\text{STAT}\}, \quad
+\text{Follow}_1(\text{statseq}) = \{\text{';'}, \text{END}\}
+$$
+
+kann der Parser auch mit `k=2` nicht entscheiden, ob nach `STAT` die Produktion endet oder ob ein weiteres `;` statseq folgt, da `STAT` in beiden Alternativen vorkommt.
+
+Erst mit 3 Symbolen kann der Parser entscheiden, ob ein weiteres `STAT` folgt, da entweder ein ob ein `STAT` oder ein `END` folgt.
+
+### `k=3`
+
+Die Grammatik mit LL(3) geparst werden können.
 
 ## c)
 
-Die für den LL(1)-Umbau relevante Regel ist $\text{imppart} \to \text{FROM} \ \text{id} \ \text{IMPORT} \ \text{implist} \mid \text{IMPORT} \ \text{implist}$.
-Um den Konflikt aufzulösen, können wir die Regel in zwei separate Regeln aufteilen:
+Regeln mit Konflikten:
 
-$$
-\text{imppart} \to \text{IMPORT} \ \text{implistpart}
-$$
+- imppart -> FROM id IMPORT implist | IMPORT implist
+- implist -> id , implist | id
+- dclpart -> DECL dclpart' | DECL
+- statseq -> STAT ; statseq | STAT
 
-$$
-\text{implistpart} \to \text{FROM} \ \text{id} \ \text{IMPORT} \ \text{implist} \mid \epsilon
-$$
+Die für den LL(1)-Umbau relevanten Regeln können aufgeteilt werden, um die Konflikte aufzulösen:
 
-Das heißt $First_1$(immpart) = {IMPORT} und $First_1$(implistpart) = {FROM, $\epsilon$} und es gibt keine Überschneidung der $First_1$-Mengen mehr.
+```ebnf
+progmod -> MODULE id : priority ; imppart block id .
+priority -> const | ϵ
+imppart -> FROM id optimport
+optimport -> IMPORT implist | ϵ
+implist -> id moreimplist
+moreimplist -> , implist | ϵ
+block -> dclpart statpart | statpart
+declpart -> DECL dclpartlist
+dclpartlist -> ; dclpart | ϵ
+statpart -> BEGIN statseq ; END
+statseq -> STAT statseqlist
+statseqlist -> ; statseq | ϵ
+```
+
+First-Mengen:
+
+| **Regel**      | **First (Ursprünglich)** | **First (Transformiert)** |
+|----------------|--------------------------|---------------------------|
+| `progmod`      | `{MODULE}`               | `{MODULE}`                |
+| `priority`     | `{const, ϵ}`             | `{const, ϵ}`              |
+| `imppart`      | `{FROM, IMPORT}`         | `{FROM}`                  |
+| `optimport`    |                          | `{IMPORT}`                |
+| `implist`      | `{id}`                   | `{id}`                    |
+| `moreimplist`  |                          | `{',' ϵ}`                 |
+| `block`        | `{DECL, BEGIN}`          | `{DECL, BEGIN}`           |
+| `declpart`     | `{DECL}`                 | `{DECL}`                  |
+| `dclpartlist`  |                          | `{';', ϵ}`                |
+| `statpart`     | `{BEGIN}`                | `{BEGIN}`                 |
+| `statseq`      | `{STAT}`                 | `{STAT}`                  |
+| `statseqlist`  |                          | `{';', ϵ}`                |
+
+Nach der Umstrukturierung in eine LL(1)-Grammatik erfüllen die Regeln nun die LL(1)-Bedingung

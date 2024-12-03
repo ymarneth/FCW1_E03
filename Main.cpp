@@ -104,6 +104,11 @@ void testNFA() {
     vizualizeFA("renMinDfaOfNfa", renMinDfaOfNfa.get());
 }
 
+bool isRegularSequence(const Sequence &seq) {
+    const auto length = seq.length();
+    return length > 0 && length < 3 && seq.symbolAt(0)->isT() && seq.symbolAt(length - 1)->isT();
+}
+
 NFA *faOf(const Grammar *g) {
     FABuilder builder;
 
@@ -116,6 +121,10 @@ NFA *faOf(const Grammar *g) {
         auto const &sequenceSet = value;
 
         for (const Sequence *seq: sequenceSet) {
+            if (!isRegularSequence(*seq)) {
+                throw runtime_error("Grammar is not regular");
+            }
+
             const State srcState(nt->name);
             const TapeSymbol tapeSymbol = seq->symbolAt(0)->name[0];
 
@@ -140,7 +149,7 @@ void testNFAFromGrammar() {
 
     const GrammarBuilder gb4(
         "G(1):                         \n\
-                 1 -> a 2 | b 1           \n\
+                 1 -> a 2 | b 1 | eps       \n\
                  2 -> a 2 | b 1 | b 3 | a \n\
                  3 -> a 2 | b 4           \n\
                  4 -> a 4 | b 4 | b | a     ");
@@ -283,15 +292,15 @@ void testMooreTranslation() {
 
     // Konfiguriere den Automaten
     builder.setStartState("B")
-           .addFinalState("R")
-           .addTransition("B", 'b', "R")
-           .addTransition("R", 'b', "R")
-           .addTransition("R", 'z', "R");
+            .addFinalState("R")
+            .addTransition("B", 'b', "R")
+            .addTransition("R", 'b', "R")
+            .addTransition("R", 'z', "R");
 
     // Zustands-Ausgabe-Mapping (lambda-Funktion)
     builder.setMooreLambda({
         {"B", 'c'}, // Startzustand -> 'c' für Buchstabe
-        {"R", 'd'}  // Zustand für Ziffern -> 'd'
+        {"R", 'd'} // Zustand für Ziffern -> 'd'
     });
 
     // Erstelle den Moore-DFA
@@ -468,9 +477,6 @@ int main(int argc, char *argv[]) {
         testNFA();
         cout << endl;
 
-        testNFAFromGrammar();
-        cout << endl;
-
         testGrammarOfNFA();
         cout << endl;*/
 
@@ -486,10 +492,7 @@ int main(int argc, char *argv[]) {
         /*testDfaOf();
         cout << endl;*/
 
-        testMooreTranslation();
-        cout << endl;
-
-        testMealyTranslation();
+        testNFAFromGrammar();
         cout << endl;
     } catch (const exception &e) {
         cerr << "EXCEPTION (" << typeid(e).name() << "): " << e.what() << endl;
